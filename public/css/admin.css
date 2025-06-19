@@ -1,0 +1,265 @@
+/* 客服图标容器样式 */
+#customer-service-icon-container {
+    width: 70px; /* 容器大小 */
+    height: 70px; /* 容器大小 */
+    background-color: #007bff; /* 圆形背景颜色 */
+    border-radius: 50%; /* 使容器变成圆形 */
+    display: flex; /* 使用flexbox居中图标 */
+    justify-content: center; /* 水平居中 */
+    align-items: center; /* 垂直居中 */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* 添加阴影 */
+    transition: background-color 0.3s ease;
+}
+
+#customer-service-icon-container:hover {
+    background-color: #0056b3; /* 鼠标悬停时的颜色 */
+}
+
+/* 客服图标图片样式 */
+#customer-service-icon-container img {
+    width: 40px; /* 图标图片大小 */
+    height: 40px; /* 图标图片大小 */
+    filter: invert(100%); /* 将图标颜色反转为白色以适应深色背景 */
+}
+
+/* 未读消息徽章样式 */
+#unread-messages-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    min-width: 20px; /* 最小宽度，确保圆形 */
+    text-align: center;
+    display: none; /* 默认隐藏，有未读消息时显示 */
+    /* 添加动画效果 */
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+    }
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar-sticky {
+    position: relative;
+    top: 0;
+    height: calc(100vh - 48px);
+    padding-top: .5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* 导航链接样式 */
+.nav-link {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.5rem 1rem;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.nav-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background-color: #fff;
+    border-radius: 2px;
+}
+
+/* 通知样式 */
+.notification-modal {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 9999;
+    animation: slideIn 0.3s ease-out;
+    max-width: 400px;
+}
+
+.notification-content {
+    padding: 15px;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.notification-header h4 {
+    margin: 0;
+    color: #333;
+}
+
+.notification-body {
+    margin-bottom: 15px;
+}
+
+.notification-body p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.notification-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+/* 红点提示样式 */
+.badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.25em 0.6em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* 动画 */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Customer Service Chat Modal Size Adjustments */
+#admin-customer-chat-modal .modal-dialog {
+  max-width: 800px; /* 固定宽度为 800px */
+  width: 800px; /* 固定宽度为 800px */
+  margin: 1.75rem auto; /* 默认的上下边距，左右自动居中 */
+}
+
+#admin-customer-chat-modal .modal-content {
+  height: 600px; /* 固定高度为 600px */
+  max-height: 600px; /* 固定高度为 600px */
+  display: flex;
+  flex-direction: column;
+}
+
+#admin-customer-chat-modal .modal-body {
+  flex-grow: 1; /* 让modal-body占据剩余空间 */
+  overflow-y: hidden; /* 防止modal-body本身出现不必要的滚动条，滚动交给chat-messages */
+  /* padding: 1rem; REMOVED - HTML has p-0 which is padding: 0 !important; */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Style for user tabs to prevent shrinking */
+#admin-customer-chat-modal #user-tabs {
+  flex-shrink: 0;
+  position: relative; /* For Bootstrap tab styling if needed */
+}
+
+/* Added styles for chat-content to correctly manage its children's layout */
+#admin-customer-chat-modal #chat-content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Allow chat-content to fill available vertical space */
+  min-height: 0 !important; /* Override inline min-height and allow shrinking */
+  overflow: hidden; /* Prevent chat-content itself from scrolling */
+  /* p-3 class from HTML provides padding, which is fine */
+}
+
+#admin-customer-chat-modal #chat-messages {
+  flex-grow: 1; /* 确保消息区能在modal-body内扩展 */
+  overflow-y: auto; /* 核心：让消息区域内部可以滚动 */
+  min-height: 0 !important; /* Override inline min-height and allow proper flex sizing */
+  padding-right: 10px; /* 给滚动条留出空间，避免内容遮挡, reduced padding */
+  border: 1px solid #f0f0f0; /* 可选：给消息区加个边框，方便调试看范围 */
+  background-color: #ffffff; /* 可选：给消息区加个背景色 */
+  margin-bottom: 0; /* Ensure no extra margin pushes it down */
+}
+
+#admin-customer-chat-modal .modal-header {
+  flex-shrink: 0; /* 防止头部被压缩 */
+}
+
+#admin-customer-chat-modal .modal-footer {
+  flex-shrink: 0; /* 防止底部被压缩 */
+  padding: 0.75rem 1rem;
+  display: flex; /* For aligning input and button */
+  align-items: center; /* For aligning input and button */
+}
+
+#admin-customer-chat-modal #admin-message-input {
+    flex-grow: 1;
+    margin-right: 0.5rem;
+} 

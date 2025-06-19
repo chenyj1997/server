@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>永鑫资本系统 - 管理控制台</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">永鑫资本系统管理控制台</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" id="nav-info">信息管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="nav-users">用户管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="nav-wallet">钱包管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="nav-notification">通知管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="nav-recharge">充值管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="nav-transactions">交易审核</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="nav-link" id="user-info">未登录</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="btn-logout">退出</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- 登录和注册表单 -->
+        <div id="login-section" class="col-md-6 offset-md-3">
+            <div class="card">
+                <!-- 选项卡导航 -->
+                <div class="card-header bg-primary p-0">
+                    <ul class="nav nav-tabs nav-pills card-header-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active text-white" id="admin-login-tab" data-bs-toggle="tab" data-bs-target="#admin-login" type="button" role="tab" aria-controls="admin-login" aria-selected="true">管理员登录</button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 选项卡内容 -->
+                <div class="card-body tab-content">
+                    <!-- 管理员登录表单 -->
+                    <div class="tab-pane fade show active" id="admin-login" role="tabpanel" aria-labelledby="admin-login-tab">
+                        <h5 class="card-title">管理员登录</h5>
+                        <form id="admin-login-form">
+                            <div class="mb-3">
+                                <label for="admin-username" class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="admin-username" name="admin-username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="admin-password" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="admin-password" name="admin-password" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">管理员登录</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div id="main-content" style="display: none;">
+            <!-- 信息管理区域 -->
+            <div id="info-section" style="display: none;">
+                <!-- 信息列表部分 -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">信息列表</h5>
+                        <button type="button" class="btn btn-sm btn-primary" id="add-info-btn">
+                            <i class="bi bi-plus"></i> 新增信息
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- 加载状态 -->
+                        <div id="info-list-loading" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                            <div class="mt-2">正在加载信息列表...</div>
+                        </div>
+                        
+                        <!-- 列表容器 -->
+                        <div id="info-list-container" class="d-flex flex-wrap" style="display: none;"></div>
+                        
+                        <!-- 错误提示 -->
+                        <div id="info-error" class="alert alert-danger" style="display: none;"></div>
+                        
+                        <!-- 分页 -->
+                        <nav aria-label="信息列表分页" class="mt-4">
+                            <ul id="info-pagination" class="pagination justify-content-center"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户管理区域 -->
+            <div id="users-section" style="display: none;">
+                <div class="d-flex justify-content-between mb-3">
+                    <h3>用户列表</h3>
+                    <div>
+                        <button class="btn btn-success me-2" id="btn-add-user">添加会员</button>
+                        <button class="btn btn-primary" id="btn-export-users">导出用户</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <!-- 搜索和筛选 -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="user-search" placeholder="搜索用户名/邮箱/手机号">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="user-role-filter">
+                                    <option value="">所有角色</option>
+                                    <option value="admin">管理员</option>
+                                    <option value="user">普通用户</option>
+                                    <option value="vip">VIP用户</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="user-status-filter">
+                                    <option value="">所有状态</option>
+                                    <option value="active">正常</option>
+                                    <option value="disabled">禁用</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100" id="btn-reset-filter">重置筛选</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>用户ID</th>
+                                        <th>用户名</th>
+                                        <th>邮箱</th>
+                                        <th>手机号</th>
+                                        <th>角色</th>
+                                        <th>余额</th>
+                                        <th>状态</th>
+                                        <th>注册时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-list">
+                                    <!-- 用户列表将通过JS动态填充 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- 分页控件 -->
+                        <nav>
+                            <ul class="pagination justify-content-center" id="users-pagination">
+                                <!-- 分页将通过JS动态填充 -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 钱包管理区域 -->
+            <div id="wallet-section" style="display: none;">
+                <h3>钱包交易记录</h3>
+                
+                <div class="row mb-4">
+                    <!-- 今日明细 -->
+                    <div class="col-md-3">
+                        <div class="card bg-info bg-opacity-25 h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">今日明细</h5>
+                                <div class="mt-3">
+                                    <p>收入</p>
+                                    <h4>¥<span id="today-income">0</span></h4>
+                                    <p>支出</p>
+                                    <h4>¥<span id="today-expense">0</span></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 昨日明细 -->
+                    <div class="col-md-3">
+                        <div class="card bg-warning bg-opacity-25 h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">昨日明细</h5>
+                                <div class="mt-3">
+                                    <p>收入</p>
+                                    <h4>¥<span id="yesterday-income">0</span></h4>
+                                    <p>支出</p>
+                                    <h4>¥<span id="yesterday-expense">0</span></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 本周明细 -->
+                    <div class="col-md-3">
+                        <div class="card bg-success bg-opacity-25 h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">本周明细</h5>
+                                <div class="mt-3">
+                                    <p>收入</p>
+                                    <h4>¥<span id="week-income">0</span></h4>
+                                    <p>支出</p>
+                                    <h4>¥<span id="week-expense">0</span></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 本月明细 -->
+                    <div class="col-md-3">
+                        <div class="card bg-danger bg-opacity-25 h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">本月明细</h5>
+                                <div class="mt-3">
+                                    <p>收入</p>
+                                    <h4>¥<span id="month-income">0</span></h4>
+                                    <p>支出</p>
+                                    <h4>¥<span id="month-expense">0</span></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="wallet-table">
+                                <thead>
+                                    <tr>
+                                        <th>用户</th>
+                                        <th>类型</th>
+                                        <th>金额</th>
+                                        <th>说明</th>
+                                        <th>状态</th>
+                                        <th>时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="wallet-list">
+                                    <!-- 钱包记录将通过JS动态填充 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 通知管理区域 -->
+            <div id="notification-section" style="display: none;">
+                <div class="d-flex justify-content-between mb-3">
+                    <h3>系统通知</h3>
+                    <button class="btn btn-success" id="btn-new-notification">发布新通知</button>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="notifications-table">
+                                <thead>
+                                    <tr>
+                                        <th>标题</th>
+                                        <th>通知类型</th>
+                                        <th>状态</th>
+                                        <th>发布时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notifications-list">
+                                    <!-- 通知列表将通过JS动态填充 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 充值管理区域 -->
+            <div id="recharge-section" style="display: none;">
+                <div class="d-flex justify-content-between mb-3">
+                    <h3>充值管理</h3>
+                    <button class="btn btn-success" id="btn-add-recharge-path">添加充值路径</button>
+                </div>
+                
+                <!-- 充值管理导航选项卡 -->
+                <ul class="nav nav-tabs mb-3" id="recharge-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="recharge-path-tab" data-bs-toggle="tab" data-bs-target="#recharge-path-content" type="button" role="tab">
+                            充值路径设置
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="recharge-audit-tab" data-bs-toggle="tab" data-bs-target="#recharge-audit-content" type="button" role="tab">
+                            充值审核列表 <span id="recharge-audit-badge" class="badge bg-danger rounded-pill"></span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="withdraw-audit-tab" data-bs-toggle="tab" data-bs-target="#withdraw-audit-content" type="button" role="tab">
+                            提现审核列表 <span id="withdraw-audit-badge" class="badge bg-danger rounded-pill"></span>
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- 充值管理内容区域 -->
+                <div class="tab-content" id="recharge-tabs-content">
+                    <!-- 充值路径设置 -->
+                    <div class="tab-pane fade show active" id="recharge-path-content" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5>充值路径设置</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="recharge-path-table">
+                                        <thead>
+                                            <tr>
+                                                <th>图标</th>
+                                                <th>充值名称</th>
+                                                <th>账号/地址</th>
+                                                <th>收款人</th>
+                                                <th>收款码</th>
+                                                <th>状态</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recharge-path-list">
+                                            <!-- 充值路径将通过JS动态填充 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 充值审核列表 -->
+                    <div class="tab-pane fade" id="recharge-audit-content" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5>充值审核列表</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="recharge-audit-table">
+                                        <thead>
+                                            <tr>
+                                                <th>用户</th>
+                                                <th>类型</th>
+                                                <th>金额</th>
+                                                <th>充值路径</th>
+                                                <th>交易凭证</th>
+                                                <th>申请时间</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recharge-audit-list">
+                                            <!-- 充值审核将通过JS动态填充 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 提现审核列表 -->
+                    <div class="tab-pane fade" id="withdraw-audit-content" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5>提现审核列表</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="withdraw-audit-table">
+                                        <thead>
+                                            <tr>
+                                                <th>用户</th>
+                                                <th>金额</th>
+                                                <th>提现账户</th>
+                                                <th>申请时间</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="withdraw-audit-list">
+                                            <!-- 提现审核将通过JS动态填充 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 交易审核区域 -->
+            <div id="transactions-section" style="display: none;">
+                <div class="d-flex justify-content-between mb-3">
+                    <h3>交易审核</h3>
+                    <div>
+                        <button class="btn btn-primary me-2" id="btn-export-transactions">导出记录</button>
+                        <button class="btn btn-secondary" id="btn-refresh-transactions">刷新</button>
+                    </div>
+                </div>
+                
+                <!-- 交易审核导航选项卡 -->
+                <ul class="nav nav-tabs mb-3" id="transaction-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="recharge-tab" data-bs-toggle="tab" data-bs-target="#recharge-content" type="button" role="tab">
+                            充值审核 <span id="recharge-badge" class="badge bg-danger rounded-pill"></span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="withdraw-tab" data-bs-toggle="tab" data-bs-target="#withdraw-content" type="button" role="tab">
+                            提现审核 <span id="withdraw-badge" class="badge bg-danger rounded-pill"></span>
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- 交易审核内容区域 -->
+                <div class="tab-content" id="transaction-tabs-content">
+                    <!-- 充值审核 -->
+                    <div class="tab-pane fade show active" id="recharge-content" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <!-- 搜索和筛选 -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" id="recharge-search" placeholder="搜索用户名/订单号">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select class="form-select" id="recharge-status-filter">
+                                            <option value="">所有状态</option>
+                                            <option value="pending">待审核</option>
+                                            <option value="approved">已通过</option>
+                                            <option value="rejected">已拒绝</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group">
+                                            <input type="date" class="form-control" id="recharge-date-start">
+                                            <span class="input-group-text">至</span>
+                                            <input type="date" class="form-control" id="recharge-date-end">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-secondary w-100" id="btn-reset-recharge-filter">重置筛选</button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="recharge-table">
+                                        <thead>
+                                            <tr>
+                                                <th>订单号</th>
+                                                <th>用户</th>
+                                                <th>金额</th>
+                                                <th>充值方式</th>
+                                                <th>交易凭证</th>
+                                                <th>申请时间</th>
+                                                <th>状态</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recharge-list">
+                                            <!-- 充值记录将通过JS动态填充 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- 分页控件 -->
+                                <nav>
+                                    <ul class="pagination justify-content-center" id="recharge-pagination">
+                                        <!-- 分页将通过JS动态填充 -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 提现审核 -->
+                    <div class="tab-pane fade" id="withdraw-content" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <!-- 搜索和筛选 -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" id="withdraw-search" placeholder="搜索用户名/订单号">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select class="form-select" id="withdraw-status-filter">
+                                            <option value="">所有状态</option>
+                                            <option value="pending">待审核</option>
+                                            <option value="approved">已通过</option>
+                                            <option value="rejected">已拒绝</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group">
+                                            <input type="date" class="form-control" id="withdraw-date-start">
+                                            <span class="input-group-text">至</span>
+                                            <input type="date" class="form-control" id="withdraw-date-end">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-secondary w-100" id="btn-reset-withdraw-filter">重置筛选</button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="withdraw-table">
+                                        <thead>
+                                            <tr>
+                                                <th>订单号</th>
+                                                <th>用户</th>
+                                                <th>金额</th>
+                                                <th>提现账户</th>
+                                                <th>申请时间</th>
+                                                <th>状态</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="withdraw-list">
+                                            <!-- 提现记录将通过JS动态填充 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- 分页控件 -->
+                                <nav>
+                                    <ul class="pagination justify-content-center" id="withdraw-pagination">
+                                        <!-- 分页将通过JS动态填充 -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 信息编辑模态框 -->
+    <div class="modal fade" id="info-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="info-modal-title">编辑信息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="info-form">
+                        <input type="hidden" id="info-id">
+                        <div class="mb-3">
+                            <label for="info-title-input" class="form-label">标题</label>
+                            <input type="text" class="form-control" id="info-title-input" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="info-content-input" class="form-label">内容</label>
+                            <textarea class="form-control" id="info-content-input" rows="5" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="info-images-input" class="form-label">添加图片</label>
+                            <input type="file" class="form-control" id="info-images-input" accept="image/*" multiple>
+                            <div class="mt-2" id="info-images-preview" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                <!-- 图片预览区域 -->
+                            </div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="info-top-input">
+                            <label class="form-check-label" for="info-top-input">置顶</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="btn-save-info">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户个人中心界面 -->
+    <div id="user-container" style="display: none;">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5>个人中心</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action active" id="nav-user-home">首页</a>
+                        <a href="#" class="list-group-item list-group-item-action" id="nav-user-profile">个人资料</a>
+                        <a href="#" class="list-group-item list-group-item-action" id="nav-user-wallet">我的钱包</a>
+                        <a href="#" class="list-group-item list-group-item-action text-danger" id="user-btn-logout">退出登录</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <!-- 用户首页 -->
+                <div id="user-home-section">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5>信息列表</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group" id="user-info-list">
+                                <!-- 信息列表将通过JS动态填充 -->
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 个人资料 -->
+                <div id="user-profile-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5>个人资料</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="profile-result" class="alert" style="display: none;"></div>
+                            <form id="profile-form">
+                                <div class="mb-3">
+                                    <label for="profile-username" class="form-label">用户名</label>
+                                    <input type="text" class="form-control" id="profile-username" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="profile-email" class="form-label">邮箱</label>
+                                    <input type="email" class="form-control" id="profile-email">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="profile-phone" class="form-label">手机号</label>
+                                    <input type="tel" class="form-control" id="profile-phone">
+                                </div>
+                                <button type="submit" class="btn btn-primary">保存修改</button>
+                            </form>
+
+                            <hr class="my-4">
+
+                            <h5>修改密码</h5>
+                            <form id="password-form">
+                                <div class="mb-3">
+                                    <label for="current-password" class="form-label">当前密码</label>
+                                    <input type="password" class="form-control" id="current-password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="change-new-password" class="form-label">新密码</label>
+                                    <input type="password" class="form-control" id="change-new-password" required>
+                                    <small class="form-text text-muted">密码长度至少6个字符</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm-new-password" class="form-label">确认新密码</label>
+                                    <input type="password" class="form-control" id="confirm-new-password" required>
+                                </div>
+                                <button type="submit" class="btn btn-danger">修改密码</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 钱包管理 -->
+                <div id="user-wallet-section" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5>我的钱包</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <h5 class="mb-0 me-2">当前余额:</h5>
+                                        <h2 class="mb-0 text-primary" id="user-wallet-balance">¥0.00</h2>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <button class="btn btn-success me-2" id="btn-user-recharge">充值</button>
+                                    <button class="btn btn-outline-primary" id="btn-user-withdraw">提现</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5>交易记录</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>类型</th>
+                                            <th>金额</th>
+                                            <th>说明</th>
+                                            <th>状态</th>
+                                            <th>时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="user-transactions-list">
+                                        <!-- 交易记录通过JS动态填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 充值模态框 -->
+    <div class="modal fade" id="recharge-modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">账户充值</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="recharge-form">
+                        <div class="mb-3">
+                            <label for="recharge-amount" class="form-label">充值金额</label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" class="form-control" id="recharge-amount" min="0.01" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="recharge-description" class="form-label">备注（选填）</label>
+                            <input type="text" class="form-control" id="recharge-description">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-recharge">确认充值</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加会员模态框 -->
+    <div class="modal fade" id="add-user-modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加会员</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-user-form">
+                        <div class="mb-3">
+                            <label for="admin-new-username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="admin-new-username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="admin-new-user-password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="admin-new-user-password" required>
+                            <small class="form-text text-muted">密码长度至少6个字符</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="admin-new-email" class="form-label">邮箱</label>
+                            <input type="email" class="form-control" id="admin-new-email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="admin-new-phone" class="form-label">手机号</label>
+                            <input type="text" class="form-control" id="admin-new-phone">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="btn-save-user">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 信息详情与留言模态框 -->
+    <div class="modal fade" id="info-detail-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">信息详情与留言</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="info-detail-content"><!-- 信息内容 --></div>
+                    <hr>
+                    <h6>留言区</h6>
+                    <div id="info-comments-list" class="mb-3"><!-- 留言列表 --></div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="info-comment-input" placeholder="输入留言...">
+                        <button class="btn btn-primary" id="info-comment-send">发送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知编辑模态框 -->
+    <div class="modal fade" id="notification-modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">发布通知</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="notification-form">
+                        <input type="hidden" id="notification-id">
+                        <div class="mb-3">
+                            <label for="notification-title" class="form-label">通知标题</label>
+                            <input type="text" class="form-control" id="notification-title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notification-content" class="form-label">通知内容</label>
+                            <textarea class="form-control" id="notification-content" rows="5" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="notification-type" class="form-label">通知类型</label>
+                            <select class="form-select" id="notification-type">
+                                <option value="SYSTEM">系统通知</option>
+                                <option value="ANNOUNCEMENT">公告</option>
+                                <option value="PROMOTION">促销通知</option>
+                                <option value="OTHER">其他</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="notification-active" checked>
+                            <label class="form-check-label" for="notification-active">立即发布</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="btn-save-notification">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入必要的JavaScript文件 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/user.js"></script>
+</body>
+</html> 

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: node-server
+    env: node
+    buildCommand: npm install
+    startCommand: node app.js
+    envVars:
+      - key: MONGO_URI
+        value: your_mongodb_atlas_uri_here
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000

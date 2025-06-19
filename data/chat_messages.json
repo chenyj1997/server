@@ -1,0 +1,664 @@
+[
+  {
+    "id": "initial_1",
+    "senderId": "admin",
+    "senderName": "客服",
+    "content": "欢迎咨询！",
+    "timestamp": 1747921603733,
+    "isFromAdmin": true
+  },
+  {
+    "id": "initial_2",
+    "senderId": "admin",
+    "senderName": "客服",
+    "content": "请问有什么可以帮您？",
+    "timestamp": 1747921603734,
+    "isFromAdmin": true
+  },
+  {
+    "id": "1747923880008_1vo6i0gsn",
+    "senderId": "user_1747923878829",
+    "senderName": "用户_1747923878829",
+    "content": "啊",
+    "timestamp": 1747923880008,
+    "isFromAdmin": false,
+    "isRead": true
+  },
+  {
+    "id": "1747924036386_zgsxpwp8h",
+    "senderId": "user_1747924035213",
+    "senderName": "用户_1747924035213",
+    "content": "啊",
+    "timestamp": 1747924036386,
+    "isFromAdmin": false,
+    "isRead": true
+  },
+  {
+    "id": "1747924186451_4o48h96t6",
+    "senderId": "user_1747924185278",
+    "senderName": "用户_1747924185278",
+    "content": "啊",
+    "timestamp": 1747924186451,
+    "isFromAdmin": false,
+    "isRead": true
+  },
+  {
+    "id": "1747929137147_qeekhkew4",
+    "senderId": "user_1747929134862",
+    "senderName": "用户_1747929134862",
+    "content": "啊",
+    "timestamp": 1747929137148,
+    "isFromAdmin": false,
+    "isRead": true,
+    "targetUserId": "user_1747929134862"
+  },
+  {
+    "id": "1747936117312_rbk5yh0nc",
+    "senderId": "user_1747936114987",
+    "senderName": "用户_1747936114987",
+    "content": "1",
+    "timestamp": 1747936117313,
+    "isFromAdmin": false,
+    "isRead": true,
+    "targetUserId": "user_1747936114987"
+  },
+  {
+    "id": "1747936142494_hxczu6k76",
+    "senderId": "admin",
+    "senderName": "admin",
+    "content": "1",
+    "timestamp": 1747936142494,
+    "isFromAdmin": true,
+    "isRead": false,
+    "targetUserId": "user_1747936114987"
+  },
+  {
+    "id": "1747936362038_zt0og522i",
+    "senderId": "user_1747936359747",
+    "senderName": "用户_1747936359747",
+    "content": "1",
+    "timestamp": 1747936362038,
+    "isFromAdmin": false,
+    "isRead": true,
+    "targetUserId": "user_1747936359747"
+  },
+  {
+    "id": "1747936962789_7mawasbpp",
+    "senderId": "user_1747936960501",
+    "senderName": "用户_1747936960501",
+    "content": "1",
+    "timestamp": 1747936962789,
+    "isFromAdmin": false,
+    "isRead": true,
+    "targetUserId": "user_1747936960501"
+  },
+  {
+    "id": "1747938792520_8x653yrhp",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747938792520,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747938978854_pgacnypjr",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747938978854,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747939489628_4kv54dmvb",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747939489628,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747940270094_7h245plfw",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747940270094,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747940839763_nfecjuof9",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747940839763,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941333670_clm3rmgrm",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941333670,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941550552_44t1j5pfi",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941550552,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941570397_46rwnu2lz",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941570397,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941586771_4fk2gcdov",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941586771,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941673286_6iso8r6rn",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941673286,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941689758_qk20lrj53",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941689758,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941690467_fajfjdc7r",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941690467,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941690691_dmb0fk18v",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941690691,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941690859_h0semfaip",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "11",
+    "timestamp": 1747941690859,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941691017_i1vbnizny",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941691017,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941691175_5sumugccw",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941691175,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941691301_btl7w6fcj",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941691301,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941691453_zdvm63ivi",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941691453,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941691618_kv2yxbda9",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941691618,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941691773_wl4lp86wg",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941691773,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941691923_5nj46fp66",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941691923,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941692097_aty0p1jbu",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941692097,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941692205_ehkjlgx4k",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941692205,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941692348_ukfciiu3i",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941692348,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941692491_92zrkovov",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941692491,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747941843941_rog0yovl6",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941843941,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941846794_8q4y2islh",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941846794,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941847463_2g263r8yf",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941847463,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941847627_87g9vxvkk",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941847627,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941847779_xc4o0nu3x",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941847779,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941847930_ildrx5ei1",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941847931,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941848084_kmz686r0d",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941848084,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941848237_zullhk9dy",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941848237,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941848379_nl0hsbc9o",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941848379,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941848539_4culbsrnu",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941848539,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747941848690_k5g1na91e",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747941848690,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942159140_hocjcp4jk",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942159140,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942164935_oecfdk8dh",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942164935,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942166085_40sc76hbv",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942166085,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942166701_voeofg6vn",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942166701,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942167197_eugud23lt",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942167197,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942317782_4iln7pzkh",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942317782,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942325423_i7fa186e1",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942325423,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942328581_5qryyjbb2",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942328581,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942329924_iahmrmjje",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942329924,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942330587_3fh0f83ca",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942330587,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942331083_dvt76kg6r",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942331083,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747942595471_p7oy1uvrb",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942595471,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747942944769_sqdbmkrco",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747942944769,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747943020954_hx17upv5y",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747943020954,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "admin"
+  },
+  {
+    "id": "1747943091639_9g5qjer75",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747943091639,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747943111231_jz56byqsy",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747943111231,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "id": "1747943187909_2wqu9fytc",
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "timestamp": 1747943187909,
+    "isFromAdmin": false,
+    "isRead": false,
+    "targetUserId": "user_1747938433441"
+  },
+  {
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "isFromAdmin": false,
+    "targetUserId": "admin",
+    "timestamp": 1747943314312,
+    "isRead": false
+  },
+  {
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "isFromAdmin": false,
+    "targetUserId": "admin",
+    "id": "1747943373956_jfyh2vxer",
+    "timestamp": 1747943373956,
+    "isRead": false
+  },
+  {
+    "senderId": "user_1747938433441",
+    "senderName": "用户_3441",
+    "content": "1",
+    "isFromAdmin": false,
+    "targetUserId": "admin",
+    "id": "1747943593828_eeuebq96o",
+    "timestamp": 1747943593828,
+    "isRead": false
+  },
+  {
+    "senderId": "682db6704088c2f1808343ba",
+    "senderName": "chen1990",
+    "content": "1",
+    "isFromAdmin": false,
+    "targetUserId": "admin",
+    "id": "1747943752667_l56h10wwj",
+    "timestamp": 1747943752667,
+    "isRead": false
+  }
+]

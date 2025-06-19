@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>永鑫资本系统 - 用户注册</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .form-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">永鑫资本系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="login.html">登录</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="register.html">注册</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5>用户注册</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="register-result" class="alert" style="display: none;"></div>
+                        <form id="register-form">
+                            <div class="mb-3">
+                                <label for="register-username" class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="register-username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register-password" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="register-password" required>
+                                <small class="form-text text-muted">密码长度至少6个字符</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register-confirm-password" class="form-label">确认密码</label>
+                                <input type="password" class="form-control" id="register-confirm-password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register-email" class="form-label">邮箱</label>
+                                <input type="email" class="form-control" id="register-email">
+                            </div>
+                            <div class="mb-3">
+                                <label for="register-phone" class="form-label">手机号</label>
+                                <input type="text" class="form-control" id="register-phone">
+                            </div>
+                            <div class="mb-3">
+                                <label for="register-referrer" class="form-label">推荐人ID（选填）</label>
+                                <input type="text" class="form-control" id="register-referrer">
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" id="submit-btn" class="btn btn-primary">注册</button>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <p>已有账号？<a href="login.html">立即登录</a></p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API基础URL
+        const API_BASE_URL = '/api';
+        
+        // 清除所有错误提示
+        function clearAllErrors() {
+            const errorElements = document.querySelectorAll('.form-error');
+            const invalidInputs = document.querySelectorAll('.is-invalid');
+            
+            errorElements.forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+            });
+            
+            invalidInputs.forEach(input => {
+                input.classList.remove('is-invalid');
+            });
+        }
+        
+        // 显示特定字段的错误
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(fieldId + '-error');
+            
+            if (field && errorElement) {
+                field.classList.add('is-invalid');
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+        
+        // 验证表单
+        function validateForm() {
+            clearAllErrors();
+            
+            let isValid = true;
+            const username = document.getElementById('register-username').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            const email = document.getElementById('register-email').value.trim();
+            const phone = document.getElementById('register-phone').value.trim();
+            
+            // 验证用户名
+            if (!username || username.length < 3) {
+                showFieldError('register-username', '用户名至少需要3个字符');
+                isValid = false;
+            }
+            
+            // 验证密码
+            if (!password || password.length < 6) {
+                showFieldError('register-password', '密码长度至少需要6个字符');
+                isValid = false;
+            }
+            
+            // 验证确认密码
+            if (password !== confirmPassword) {
+                showFieldError('register-confirm-password', '两次输入的密码不一致');
+                isValid = false;
+            }
+            
+            // 验证邮箱（如果提供）
+            if (email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showFieldError('register-email', '请提供有效的邮箱地址');
+                    isValid = false;
+                }
+            }
+            
+            // 验证手机号（如果提供）
+            if (phone) {
+                const phoneRegex = /^1[3-9]\d{9}$/;
+                if (!phoneRegex.test(phone)) {
+                    showFieldError('register-phone', '请提供有效的11位中国大陆手机号');
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+        
+        // 处理表单提交
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 注册中...';
+            
+            try {
+                const formData = {
+                    username: document.getElementById('register-username').value.trim(),
+                    password: document.getElementById('register-password').value,
+                    email: document.getElementById('register-email').value.trim(),
+                    phone: document.getElementById('register-phone').value.trim(),
+                    referrerCode: document.getElementById('register-referrer').value.trim()
+                };
+                
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // 注册成功
+                    const resultDiv = document.getElementById('register-result');
+                    resultDiv.className = 'alert alert-success';
+                    resultDiv.textContent = '注册成功！正在跳转到登录页面...';
+                    resultDiv.style.display = 'block';
+                    
+                    // 3秒后跳转到登录页面
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 3000);
+                } else {
+                    // 显示错误信息
+                    const resultDiv = document.getElementById('register-result');
+                    resultDiv.className = 'alert alert-danger';
+                    resultDiv.textContent = result.message || '注册失败，请稍后重试';
+                    resultDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('注册请求失败:', error);
+                const resultDiv = document.getElementById('register-result');
+                resultDiv.className = 'alert alert-danger';
+                resultDiv.textContent = '注册请求失败，请检查网络连接后重试';
+                resultDiv.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '注册';
+            }
+        });
+    </script>
+</body>
+</html> 

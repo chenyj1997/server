@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APP充值页面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .recharge-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .qrcode-preview {
+            max-width: 100%;
+            max-height: 240px;
+            display: block;
+            margin: 10px auto;
+        }
+        .proof-preview {
+            max-height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            display: none;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container recharge-container">
+        <h2 class="text-center mb-4">账户充值</h2>
+        
+        <!-- 充值表单 -->
+        <div class="card">
+            <div class="card-body">
+                <form id="rechargeForm" enctype="multipart/form-data">
+                    <!-- 用户ID (测试用) -->
+                    <div class="mb-3">
+                        <label for="userId" class="form-label">用户ID</label>
+                        <input type="text" class="form-control" id="userId" required>
+                        <small class="text-muted">测试用: 输入有效的用户ID</small>
+                    </div>
+                    
+                    <!-- 充值金额 -->
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">充值金额</label>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">¥</span>
+                            <input type="number" class="form-control" id="amount" min="10" step="10" value="100" required>
+                        </div>
+                    </div>
+                    
+                    <!-- 充值方式选择 -->
+                    <div class="mb-3">
+                        <label for="rechargePath" class="form-label">选择充值方式</label>
+                        <select class="form-select" id="rechargePath" required>
+                            <option value="">-- 请选择 --</option>
+                            <!-- 将通过API动态加载 -->
+                        </select>
+                    </div>
+                    
+                    <!-- 选中的充值方式信息 -->
+                    <div id="rechargeInfo" class="card mb-3" style="display: none;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title mb-3" id="pathName">充值方式名称</h5>
+                            <img id="qrcodeImage" class="qrcode-preview mb-2">
+                            <div class="alert alert-info">
+                                <p class="mb-1"><strong>账号:</strong> <span id="accountInfo"></span></p>
+                                <p class="mb-0"><strong>收款人:</strong> <span id="receiverInfo"></span></p>
+                            </div>
+                            <p class="text-danger">请扫码支付后，保存转账截图上传</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 上传转账截图 -->
+                    <div class="mb-3">
+                        <label for="proofImage" class="form-label">上传转账截图 <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="proofImage" name="proof" accept="image/*" required>
+                        <div class="form-text">请上传转账成功的截图作为充值凭证</div>
+                    </div>
+                    
+                    <!-- 预览上传图片 -->
+                    <img id="proofPreview" class="proof-preview">
+                    
+                    <!-- 备注信息 -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">备注信息</label>
+                        <textarea class="form-control" id="description" rows="2"></textarea>
+                    </div>
+                    
+                    <!-- 提交按钮 -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">提交充值申请</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 结果显示 -->
+        <div class="alert mt-3" id="resultMessage" style="display: none;"></div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从API加载充值方式列表
+            loadRechargePaths();
+            
+            // 监听充值方式选择
+            document.getElementById('rechargePath').addEventListener('change', showRechargeInfo);
+            
+            // 监听图片上传变化
+            document.getElementById('proofImage').addEventListener('change', previewImage);
+            
+            // 监听表单提交
+            document.getElementById('rechargeForm').addEventListener('submit', submitRecharge);
+        });
+        
+        // 加载充值方式列表
+        async function loadRechargePaths() {
+            try {
+                const response = await fetch('/api/app/recharge/paths');
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const select = document.getElementById('rechargePath');
+                    
+                    // 清除占位选项后添加充值方式
+                    select.innerHTML = '<option value="">-- 请选择 --</option>';
+                    
+                    result.data.forEach(path => {
+                        const option = document.createElement('option');
+                        option.value = path.id || path._id;
+                        option.textContent = path.name;
+                        option.dataset.account = path.account;
+                        option.dataset.receiver = path.receiver;
+                        option.dataset.qrcode = path.qrcode;
+                        option.dataset.icon = path.icon;
+                        select.appendChild(option);
+                    });
+                } else {
+                    showMessage('没有可用的充值方式，请联系管理员', 'warning');
+                }
+            } catch (error) {
+                console.error('加载充值方式失败:', error);
+                showMessage('加载充值方式失败，请稍后再试', 'danger');
+            }
+        }
+        
+        // 显示选中的充值方式信息
+        function showRechargeInfo() {
+            const select = document.getElementById('rechargePath');
+            const infoBox = document.getElementById('rechargeInfo');
+            
+            if (select.value) {
+                const option = select.options[select.selectedIndex];
+                
+                // 显示充值方式信息
+                document.getElementById('pathName').textContent = option.textContent;
+                document.getElementById('accountInfo').textContent = option.dataset.account || '未提供';
+                document.getElementById('receiverInfo').textContent = option.dataset.receiver || '未提供';
+                
+                // 显示二维码
+                const qrcodeImage = document.getElementById('qrcodeImage');
+                if (option.dataset.qrcode) {
+                    qrcodeImage.src = option.dataset.qrcode;
+                    qrcodeImage.style.display = 'block';
+                } else {
+                    qrcodeImage.style.display = 'none';
+                }
+                
+                infoBox.style.display = 'block';
+            } else {
+                infoBox.style.display = 'none';
+            }
+        }
+        
+        // 预览上传的截图
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                showMessage('请选择图片文件', 'warning');
+                event.target.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('proofPreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // 提交充值申请
+        async function submitRecharge(event) {
+            event.preventDefault();
+            
+            // 验证表单
+            const userId = document.getElementById('userId').value;
+            const amount = document.getElementById('amount').value;
+            const rechargePathId = document.getElementById('rechargePath').value;
+            const proofImage = document.getElementById('proofImage').files[0];
+            const description = document.getElementById('description').value;
+            
+            if (!userId || !amount || !rechargePathId || !proofImage) {
+                showMessage('请完成所有必填项', 'warning');
+                return;
+            }
+            
+            // 禁用提交按钮，防止重复提交
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
+            
+            // 创建表单数据
+            const formData = new FormData();
+            formData.append('userId', userId);
+            formData.append('amount', amount);
+            formData.append('rechargePathId', rechargePathId);
+            formData.append('description', description);
+            formData.append('proof', proofImage);
+            
+            try {
+                // 提交充值申请
+                const response = await fetch('/api/app/transactions/recharge', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('充值申请已提交成功，等待后台审核', 'success');
+                    // 重置表单
+                    document.getElementById('rechargeForm').reset();
+                    document.getElementById('rechargeInfo').style.display = 'none';
+                    document.getElementById('proofPreview').style.display = 'none';
+                } else {
+                    showMessage('提交失败: ' + result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('提交充值申请失败:', error);
+                showMessage('系统错误，请稍后重试', 'danger');
+            } finally {
+                // 恢复提交按钮
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        }
+        
+        // 显示消息
+        function showMessage(message, type) {
+            const messageBox = document.getElementById('resultMessage');
+            messageBox.textContent = message;
+            messageBox.className = `alert alert-${type} mt-3`;
+            messageBox.style.display = 'block';
+            
+            // 5秒后自动隐藏
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

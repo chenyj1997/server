@@ -1,0 +1,49 @@
+<!-- 图片上传部分 -->
+<div class="mb-3">
+    <label for="image-upload" class="form-label">上传图片</label>
+    <input type="file" class="form-control" id="image-upload" accept="image/*" onchange="handleImageUpload(event)">
+    <div class="mt-2" id="image-preview"></div>
+    <input type="hidden" id="image-urls" name="imageUrls" value="[]">
+    <small class="form-text text-muted">支持jpg、jpeg、png、gif、webp格式，单个文件不超过10MB</small>
+</div>
+
+<!-- 其他表单字段 -->
+<div class="mb-3">
+    <label for="name" class="form-label">姓名</label>
+    <input type="text" class="form-control" id="name" name="name" required>
+</div>
+
+<div class="mb-3">
+    <label for="age" class="form-label">年龄</label>
+    <input type="text" class="form-control" id="age" name="age" required>
+</div>
+
+<div class="mb-3">
+    <label for="phone" class="form-label">电话</label>
+    <input type="tel" class="form-control" id="phone" name="phone" required>
+</div>
+
+<div class="mb-3">
+    <label for="job" class="form-label">职业</label>
+    <input type="text" class="form-control" id="job" name="job" required>
+</div>
+
+<div class="mb-3">
+    <label for="loanAmount" class="form-label">借款金额</label>
+    <input type="text" class="form-control" id="loanAmount" name="loanAmount" required>
+</div>
+
+<div class="mb-3">
+    <label for="period" class="form-label">借款期限</label>
+    <input type="text" class="form-control" id="period" name="period" required>
+</div>
+
+<div class="mb-3">
+    <label for="repaymentAmount" class="form-label">还款金额</label>
+    <input type="text" class="form-control" id="repaymentAmount" name="repaymentAmount" required>
+</div>
+
+<!-- 提交按钮 -->
+<div class="d-grid gap-2">
+    <button type="submit" class="btn btn-primary" id="submitBtn">提交信息</button>
+</div> 
