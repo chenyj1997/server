@@ -34,7 +34,6 @@ const systemRoutes = require('./routes/systemRoutes');
 const customerServiceRoutes = require('./routes/customerService');
 const userRoutes = require('./routes/users');
 const uploadRoutes = require('./routes/upload');
-app.use('/api/upload', uploadRoutes);
 
 // 导入中间件
 const adminAuth = require('./middleware/adminAuth');
