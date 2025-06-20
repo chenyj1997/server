@@ -191,7 +191,6 @@ function fillRechargePathForm(path) {
     document.getElementById('recharge-path-receiver').value = path.receiver || '';
     document.getElementById('recharge-path-type').value = path.type || 'other';
     // 填充活跃状态复选框
-    document.getElementById('recharge-path-active').checked = path.active === true; // 根据 path.active 设置复选框状态
 
     // TODO: 处理图标和二维码文件的回显（如果需要）
     // 注意：文件输入框出于安全考虑，不能通过JS设置其value来显示已上传的文件路径
@@ -214,17 +213,7 @@ async function handleSaveRechargePath(event) {
     if (qrcodeInput && qrcodeInput.files && qrcodeInput.files.length > 0) {
       formData.set('qrCode', qrcodeInput.files[0]);
     }
-    // 获取活跃状态复选框的值
-    const isActiveCheckbox = document.getElementById('recharge-path-active');
-    let isActive = true; // 默认启用
-    if (isActiveCheckbox) {
-        isActive = isActiveCheckbox.checked; // 如果元素存在，获取它的状态
-    } else {
-        console.error('保存时未找到充值路径启用复选框 #recharge-path-active');
-        // 如果找不到复选框，保留默认值 true，或者根据实际情况抛出错误
-        // 这里我们保留默认启用，以免保存失败
-    }
-    formData.append('isActive', isActive);
+
 
     // 获取路径ID，用于判断是添加还是更新
     const pathId = document.getElementById('recharge-path-id').value; // 从隐藏字段获取ID
@@ -332,7 +321,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (activeCheckbox) {
           activeCheckbox.checked = true; // 新增时默认启用
         } else {
-          console.error('未找到充值路径启用复选框 #recharge-path-active');
         }
         // 移除事件监听器，避免重复触发
         document.getElementById('recharge-path-modal').removeEventListener('shown.bs.modal', onModalShown);
