@@ -198,26 +198,22 @@ function fillRechargePathForm(path) {
     // 通常的做法是显示当前已上传的图片预览，或者在编辑时提供重新上传的选项
 }
 
-// 处理保存充值路径
+// 保存充值路径
 async function handleSaveRechargePath(event) {
   event.preventDefault();
-  
   try {
-    // 检查管理员权限
-    const token = localStorage.getItem('token');
-    const userRole = localStorage.getItem('userRole');
-    const isAdmin = localStorage.getItem('isAdmin');
-
-    if (!token || !isAdmin || userRole !== 'admin') {
-      alert('需要管理员权限，请重新登录');
-      window.location.href = '/login.html';
-      return;
-    }
-
-    // 获取表单数据
     const form = document.getElementById('recharge-path-form');
+    if (!form) return;
     const formData = new FormData(form);
-
+    // 只添加文件，不传对象
+    const iconInput = document.getElementById('recharge-path-icon');
+    if (iconInput && iconInput.files && iconInput.files.length > 0) {
+      formData.set('icon', iconInput.files[0]);
+    }
+    const qrcodeInput = document.getElementById('recharge-path-qrcode');
+    if (qrcodeInput && qrcodeInput.files && qrcodeInput.files.length > 0) {
+      formData.set('qrCode', qrcodeInput.files[0]);
+    }
     // 获取活跃状态复选框的值
     const isActiveCheckbox = document.getElementById('recharge-path-active');
     let isActive = true; // 默认启用
@@ -239,16 +235,6 @@ async function handleSaveRechargePath(event) {
     const name = formData.get('name');
     const account = formData.get('account');
     const receiver = formData.get('receiver');
-    // qrCodeFile 检查只在添加时需要
-    if (method === 'POST') {
-        const qrcodeFile = document.getElementById('recharge-path-qrcode').files[0];
-        if (!qrcodeFile) {
-          alert('请上传收款二维码');
-          return;
-        }
-         formData.append('qrCode', qrcodeFile); // 添加二维码文件到表单数据 (只在添加时)
-    }
-
     if (!name || !account || !receiver) {
       alert('请填写所有必填字段');
       return;
@@ -261,7 +247,7 @@ async function handleSaveRechargePath(event) {
     const response = await fetch(url, {
       method: method,
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: formData
     });
