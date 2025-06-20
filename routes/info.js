@@ -68,18 +68,21 @@ const upload = multer({
     }
 });
 
-// 上传图片（只用cloudinary）
-router.post('/upload/image', protect, async (req, res) => {
+// 上传图片（用multer解析FormData）
+router.post('/upload/image', protect, upload.single('file'), async (req, res) => {
     try {
-        if (!req.files || !req.files.file) {
+        if (!req.file) {
             return res.status(400).json({ success: false, message: '请选择要上传的图片' });
         }
-        const file = req.files.file;
+        // 调试日志：显示上传图片的文件名
+        console.log('[图片上传] 收到文件:', req.file.originalname, '存储路径:', req.file.path);
         // 上传到 cloudinary
-        const result = await cloudinary.uploader.upload(file.tempFilePath || file.path, {
+        const result = await cloudinary.uploader.upload(req.file.path, {
             folder: 'uploads',
-            public_id: Date.now() + '-' + file.name
+            public_id: Date.now() + '-' + req.file.originalname
         });
+        // 删除本地临时文件
+        fs.unlinkSync(req.file.path);
         res.json({
             success: true,
             url: result.secure_url,
