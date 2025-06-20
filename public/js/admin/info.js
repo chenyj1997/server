@@ -1475,6 +1475,28 @@ window.infoManager = infoManager;
 
 // 在DOMContentLoaded事件中初始化页面
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. 自动创建 image-preview 容器（如果不存在）
+    let previewContainer = document.getElementById('image-preview');
+    if (!previewContainer) {
+        previewContainer = document.createElement('div');
+        previewContainer.id = 'image-preview';
+        // 默认插入到 info-form 末尾
+        const infoForm = document.getElementById('info-form');
+        if (infoForm) {
+            infoForm.appendChild(previewContainer);
+        } else {
+            document.body.appendChild(previewContainer);
+        }
+    }
+    // 2. 自动绑定 input 事件
+    const coverInput = document.getElementById('cover-image');
+    if (coverInput) {
+        coverInput.addEventListener('change', handleImageUpload);
+    }
+    const additionalInput = document.getElementById('additional-images');
+    if (additionalInput) {
+        additionalInput.addEventListener('change', handleImageUpload);
+    }
 });
 
 // 显示消息提示 (保持不变)
