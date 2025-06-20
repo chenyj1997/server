@@ -17,12 +17,15 @@ router.post('/image', upload.single('file'), async (req, res) => {
     // 删除本地临时文件
     fs.unlinkSync(req.file.path);
 
+    // 返回 cloudinary 的图片地址
     res.json({
       success: true,
       url: result.secure_url, // Cloudinary 图片访问地址
       public_id: result.public_id
     });
   } catch (err) {
+    // 打印 cloudinary 错误
+    console.error('cloudinary 上传失败:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
