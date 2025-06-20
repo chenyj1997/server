@@ -1224,7 +1224,7 @@ async function approveTransaction(id) {
             if (typeof reloadTransactionList === 'function') {
                 reloadTransactionList();
             } else {
-                location.reload();
+                fetchTransactions();
             }
         } else {
             if (typeof showError === 'function') showError(data.message || '审核通过失败');
@@ -1256,7 +1256,7 @@ async function rejectTransaction(id) {
             if (typeof reloadTransactionList === 'function') {
                 reloadTransactionList();
             } else {
-                location.reload();
+                fetchTransactions();
             }
         } else {
             if (typeof showError === 'function') showError(data.message || '审核拒绝失败');
