@@ -46,7 +46,7 @@ app.use(cors({
     origin: [
         'http://localhost:3000', 
         'https://fw108ck86325.vicp.fun',
-        'https://your-domain.com'  // 请将此处替换为您的 Cloudflare Tunnel 域名
+        'https://node-2kvt.onrender.com'  // 请将此处替换为您的 Cloudflare Tunnel 域名
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
