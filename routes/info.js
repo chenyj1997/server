@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const Info = require('../models/Info');
 const { protect, restrictToAdmin } = require('../middleware/auth');
+const cloudinary = require('../utils/cloudinary');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -67,53 +68,25 @@ const upload = multer({
     }
 });
 
-// 上传图片
-router.post('/upload/image', protect, upload.single('file'), async (req, res) => {
+// 上传图片（只用cloudinary）
+router.post('/upload/image', protect, async (req, res) => {
     try {
-        console.log('收到图片上传请求:', {
-            file: req.file, // Now expecting a single file
-            body: req.body,
-            user: req.user
-        });
-
-        if (!req.file) {
-            console.error('未找到上传文件');
-            return res.status(400).json({
-                success: false,
-                message: '请选择要上传的图片'
-            });
+        if (!req.files || !req.files.file) {
+            return res.status(400).json({ success: false, message: '请选择要上传的图片' });
         }
-
-        // 处理单个上传的文件
-        const file = req.file;
-        // 验证文件是否真实存在
-        const filePath = path.join(uploadDir, file.filename);
-        if (!fs.existsSync(filePath)) {
-            throw new Error(`文件保存失败: ${filePath}`);
-        }
-
-        // 获取文件大小
-        const stats = fs.statSync(filePath);
-        console.log('文件信息:', {
-            path: filePath,
-            size: stats.size,
-            permissions: stats.mode.toString(8)
+        const file = req.files.file;
+        // 上传到 cloudinary
+        const result = await cloudinary.uploader.upload(file.tempFilePath || file.path, {
+            folder: 'uploads',
+            public_id: Date.now() + '-' + file.name
         });
-
         res.json({
             success: true,
-            data: {
-                url: `/uploads/info/${file.filename}`,
-                filename: file.filename,
-                size: stats.size
-            }
+            url: result.secure_url,
+            public_id: result.public_id
         });
     } catch (error) {
-        console.error('图片上传失败:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || '图片上传失败'
-        });
+        res.status(500).json({ success: false, message: error.message || '图片上传失败' });
     }
 });
 
