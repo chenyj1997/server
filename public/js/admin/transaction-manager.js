@@ -512,10 +512,7 @@ function createTransactionManager() {
                                     <label for="recharge-path-qrcode" class="form-label">收款码</label>
                                     <input type="file" class="form-control" id="recharge-path-qrcode" accept="image/*">
                                 </div>
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="recharge-path-active" checked>
-                                    <label class="form-check-label" for="recharge-path-active">启用</label>
-                                </div>
+                                
                             </form>
                         </div>
                         <div class="modal-footer">
