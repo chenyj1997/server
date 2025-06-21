@@ -421,8 +421,31 @@ const createInfoManager = () => {
         // 根据输入框ID确定预览容器
         const inputId = event.target.id;
         let previewContainer;
+
+        // 获取当前表单中的隐藏字段
+        let imageUrlsInput = document.getElementById('info-image-urls');
+        if (!imageUrlsInput) {
+            imageUrlsInput = document.createElement('input');
+            imageUrlsInput.type = 'hidden';
+            imageUrlsInput.id = 'info-image-urls';
+            imageUrlsInput.name = 'imageUrls';
+            document.getElementById('info-form').appendChild(imageUrlsInput);
+        }
+        let currentUrls = imageUrlsInput.value ? JSON.parse(imageUrlsInput.value) : [];
+
         if (inputId === 'cover-image') {
             previewContainer = document.getElementById('cover-preview');
+            // 封面图片是单文件，替换旧的
+            const oldPreview = previewContainer.querySelector('.image-preview-item');
+            if (oldPreview) {
+                const oldUrl = oldPreview.dataset.imageUrl;
+                if (oldUrl) {
+                    // 从URL数组中移除旧的URL
+                    currentUrls = currentUrls.filter(url => url !== oldUrl);
+                }
+                // 移除旧的预览DOM
+                oldPreview.remove();
+            }
         } else if (inputId === 'additional-images') {
             previewContainer = document.getElementById('additional-images-preview');
         } else {
@@ -434,19 +457,6 @@ const createInfoManager = () => {
             console.error('找不到图片预览容器');
             return;
         }
-
-        // 获取当前表单中的隐藏字段
-        let imageUrlsInput = document.getElementById('info-image-urls');
-        if (!imageUrlsInput) {
-            imageUrlsInput = document.createElement('input');
-            imageUrlsInput.type = 'hidden';
-            imageUrlsInput.id = 'info-image-urls';
-            imageUrlsInput.name = 'imageUrls';
-            document.getElementById('info-form').appendChild(imageUrlsInput);
-        }
-
-        // 当前已有的URL
-        let currentUrls = imageUrlsInput.value ? JSON.parse(imageUrlsInput.value) : [];
 
         // 处理每个选择的文件
         for (const file of Array.from(files)) {
