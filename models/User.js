@@ -26,12 +26,6 @@ mongoose.connection.on('connected', () => {
 });
 
 const userSchema = new mongoose.Schema({
-    // 用户数字ID（8位随机数）
-    numericId: {
-        type: String,
-        unique: true,
-        sparse: true
-    },
     // 用户邀请码（8位数字）
     inviteCode: {
         type: String,
@@ -151,14 +145,6 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-// 生成8位随机数ID
-function generateNumericId() {
-    // 生成8位随机数（避免以0开头）
-    const min = 10000000; // 最小7位数+1
-    const max = 99999999; // 最大8位数
-    return Math.floor(min + Math.random() * (max - min)).toString();
-}
-
 // 生成邀请码
 function generateInviteCode() {
     // 生成8位随机数（避免以0开头）
@@ -175,32 +161,6 @@ userSchema.pre('save', async function(next) {
             this.password = await bcrypt.hash(this.password, 10);
         } catch (error) {
             return next(error);
-        }
-    }
-    
-    // 如果用户没有数字ID，生成一个
-    if (!this.numericId) {
-        // 尝试生成不重复的ID
-        let isUnique = false;
-        let attempts = 0;
-        let numericId;
-        
-        // 最多尝试10次生成不重复ID
-        while (!isUnique && attempts < 10) {
-            numericId = generateNumericId();
-            attempts++;
-            
-            // 检查是否存在相同ID
-            const existingUser = await mongoose.model('User').findOne({ numericId });
-            if (!existingUser) {
-                isUnique = true;
-                this.numericId = numericId;
-            }
-        }
-        
-        // 如果10次尝试后仍未生成唯一ID，使用时间戳+随机数
-        if (!isUnique) {
-            this.numericId = Date.now().toString().substring(5) + Math.floor(Math.random() * 1000);
         }
     }
     
