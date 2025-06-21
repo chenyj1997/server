@@ -65,7 +65,10 @@ async function uploadImage(file) {
 
         // 处理返回的数据
         let imageUrl;
-        if (Array.isArray(data.data)) {
+        if (typeof data.data === 'string') {
+            // 如果data.data是字符串，直接使用
+            imageUrl = data.data;
+        } else if (Array.isArray(data.data)) {
             // 如果是数组，取第一个文件的URL
             imageUrl = data.data[0].url;
         } else if (data.data && data.data.url) {
