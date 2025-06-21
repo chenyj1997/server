@@ -140,6 +140,21 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
             });
         }
         
+        // 尝试创建一个最简单的对象
+        console.log('DEBUG: 尝试创建最简单的充值路径对象...');
+        const simplePath = new RechargePath({
+            name: String(name),
+            account: String(account),
+            type: 'other'
+        });
+        
+        console.log('DEBUG: 简单对象创建成功，尝试保存...');
+        await simplePath.save();
+        console.log('DEBUG: 简单对象保存成功');
+        
+        // 如果简单对象保存成功，再尝试创建完整对象
+        console.log('DEBUG: 尝试创建完整的充值路径对象...');
+        
         // 创建新的充值路径对象
         const pathData = {
             name: String(name || ''),
@@ -166,6 +181,7 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
         });
     } catch (error) {
         console.error('创建充值路径错误:', error);
+        console.error('错误堆栈:', error.stack);
         res.status(500).json({
             success: false,
             message: '创建充值路径失败',
