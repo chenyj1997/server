@@ -575,7 +575,9 @@ function displayAdminChatMessages(messages, userId, isLoadMore = false, newMessa
         const messageTime = new Date(msg.createdAt).toLocaleString();
         let messageHtml = '';
         if (msg.messageType === 'image' && msg.imageUrl) {
-            const fullImageUrl = `${BASE_STATIC_URL}${msg.imageUrl}`;
+            // 如果imageUrl已经是完整的URL（以http或https开头），直接使用
+            // 否则添加BASE_STATIC_URL前缀
+            const fullImageUrl = msg.imageUrl.startsWith('http') ? msg.imageUrl : `${BASE_STATIC_URL}${msg.imageUrl}`;
             messageHtml = `
                 <div class="chat-message ${isMyMessage ? 'chat-message-right' : 'chat-message-left'}">
                     <div class="message-bubble ${isMyMessage ? 'bg-primary text-white' : 'bg-light text-dark'}">
