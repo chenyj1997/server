@@ -527,8 +527,12 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
 router.get('/transactions', async (req, res) => {
     try {
         const userId = req.user.id;
-        // 只查属于自己的流水，保留详细备注
-        const allTransactions = await Transaction.find({ user: userId }).sort({ createdAt: -1 }).lean();
+        // 使用 .populate('relatedInfo', 'title') 来关联查询信息的标题
+        const allTransactions = await Transaction.find({ user: userId })
+            .populate('relatedInfo', '_id') // 只需要关联的_id
+            .sort({ createdAt: -1 })
+            .lean();
+
         res.json({
             success: true,
             data: allTransactions,
