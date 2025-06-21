@@ -302,7 +302,6 @@ app.use('/api/system', systemRoutes);
 app.use('/api/user', protect, userRouter);
 app.use('/api/customer-service', customerServiceRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/info', infoRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // 处理所有其他请求
