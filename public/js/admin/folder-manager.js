@@ -140,12 +140,23 @@ class FolderManager {
             const coverPath = document.getElementById('cover-folder-path').value;
             const additionalPath = document.getElementById('additional-folder-path').value;
 
+            // 检查是否为部署环境
+            const isDeployed = window.location.hostname.includes('onrender.com') || 
+                              window.location.hostname.includes('vercel.app') || 
+                              window.location.hostname.includes('herokuapp.com');
+
             // 更新封面文件夹状态
             if (coverPath) {
-                const coverCount = await this.getImageCount(coverPath);
-                document.getElementById('cover-folder-status').textContent = '已设置';
-                document.getElementById('cover-folder-status').className = 'badge bg-success';
-                document.getElementById('cover-folder-count').textContent = `${coverCount} 张图片`;
+                if (isDeployed) {
+                    document.getElementById('cover-folder-status').textContent = '已设置 (部署环境)';
+                    document.getElementById('cover-folder-status').className = 'badge bg-warning';
+                    document.getElementById('cover-folder-count').textContent = '模拟数据';
+                } else {
+                    const coverCount = await this.getImageCount(coverPath);
+                    document.getElementById('cover-folder-status').textContent = '已设置';
+                    document.getElementById('cover-folder-status').className = 'badge bg-success';
+                    document.getElementById('cover-folder-count').textContent = `${coverCount} 张图片`;
+                }
             } else {
                 document.getElementById('cover-folder-status').textContent = '未设置';
                 document.getElementById('cover-folder-status').className = 'badge bg-info';
@@ -154,14 +165,34 @@ class FolderManager {
 
             // 更新更多照片文件夹状态
             if (additionalPath) {
-                const additionalCount = await this.getImageCount(additionalPath);
-                document.getElementById('additional-folder-status').textContent = '已设置';
-                document.getElementById('additional-folder-status').className = 'badge bg-success';
-                document.getElementById('additional-folder-count').textContent = `${additionalCount} 张图片`;
+                if (isDeployed) {
+                    document.getElementById('additional-folder-status').textContent = '已设置 (部署环境)';
+                    document.getElementById('additional-folder-status').className = 'badge bg-warning';
+                    document.getElementById('additional-folder-count').textContent = '模拟数据';
+                } else {
+                    const additionalCount = await this.getImageCount(additionalPath);
+                    document.getElementById('additional-folder-status').textContent = '已设置';
+                    document.getElementById('additional-folder-status').className = 'badge bg-success';
+                    document.getElementById('additional-folder-count').textContent = `${additionalCount} 张图片`;
+                }
             } else {
                 document.getElementById('additional-folder-status').textContent = '未设置';
                 document.getElementById('additional-folder-status').className = 'badge bg-info';
                 document.getElementById('additional-folder-count').textContent = '0 张图片';
+            }
+
+            // 如果是部署环境，显示提示信息
+            if (isDeployed) {
+                const feedbackDiv = document.getElementById('folder-settings-feedback');
+                if (feedbackDiv) {
+                    feedbackDiv.innerHTML = `
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>部署环境提示：</strong> 当前在部署环境中运行，文件夹管理功能将使用模拟数据。
+                            完整功能请在本地环境中使用。
+                        </div>
+                    `;
+                }
             }
         } catch (error) {
             console.error('刷新文件夹状态失败:', error);
@@ -197,9 +228,21 @@ class FolderManager {
             const coverPath = document.getElementById('cover-folder-path').value;
             const additionalPath = document.getElementById('additional-folder-path').value;
 
+            // 检查是否为部署环境
+            const isDeployed = window.location.hostname.includes('onrender.com') || 
+                              window.location.hostname.includes('vercel.app') || 
+                              window.location.hostname.includes('herokuapp.com');
+
             if (!coverPath && !additionalPath) {
                 if (window.ui) {
                     window.ui.showError('请先设置图片文件夹');
+                }
+                return;
+            }
+
+            if (isDeployed) {
+                if (window.ui) {
+                    window.ui.showSuccess('部署环境测试成功！模拟选择了 1 张封面图片和 1 张更多照片');
                 }
                 return;
             }
