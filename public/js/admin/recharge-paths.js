@@ -11,7 +11,7 @@ async function getRechargePaths() {
             throw new Error('用户未登录');
         }
 
-        const response = await fetch('/api/recharge-paths//paths', {
+        const response = await fetch('/api/recharge-paths/paths', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -179,7 +179,11 @@ async function createRechargePath(formData) {
             throw new Error('用户未登录');
         }
 
+        console.log('🔐 认证状态: 已登录');
         console.log('🌐 发送请求到 /api/recharge-paths/');
+        console.log('📤 请求方法: POST');
+        console.log('📤 请求头: Authorization: Bearer [token]');
+        
         const response = await fetch('/api/recharge-paths/', {
             method: 'POST',
             headers: {
@@ -436,13 +440,32 @@ async function handleSaveRechargePath() {
          }
      }
 
+     // 显示用户填入的内容
+     console.log('👤 用户填入的内容:');
+     console.log('  充值名称:', formData.get('name') || '未填写');
+     console.log('  支付类型:', formData.get('type') || '未填写');
+     console.log('  收款账号:', formData.get('account') || '未填写');
+     console.log('  收款人:', formData.get('receiver') || '未填写');
+     console.log('  排序:', formData.get('sort') || '未填写');
+     console.log('  图标文件:', formData.get('icon') ? '已选择' : '未选择');
+     console.log('  二维码文件:', formData.get('qrCode') ? '已选择' : '未选择');
+
      try {
           console.log('🌐 调用 createRechargePath 函数...');
-          await createRechargePath(formData); 
+          const result = await createRechargePath(formData); 
+
+          console.log('✅ 保存成功，返回数据:', result);
+          console.log('🎉 系统反馈: 充值路径创建成功');
 
           console.log('✅ 保存成功，关闭模态框');
           const modal = bootstrap.Modal.getInstance(rechargePathModalElement);
           if (modal) modal.hide();
+          
+          // 显示成功消息
+          if (window.ui && window.ui.showSuccess) {
+              window.ui.showSuccess('充值路径保存成功！');
+          }
+          
           // TODO: 刷新充值路径列表 (可能需要重新加载并渲染列表模态框中的列表)
           // loadRechargePathsList(); 
           // 可能需要重新打开列表模态框或者提供一个提示
@@ -452,6 +475,10 @@ async function handleSaveRechargePath() {
          console.error('错误类型:', error.constructor.name);
          console.error('错误消息:', error.message);
          console.error('错误堆栈:', error.stack);
+         
+         console.log('💥 系统反馈: 保存失败');
+         console.log('  错误详情:', error.message);
+         
          // 错误处理和提示已在 createRechargePath 中进行
      }
 }
