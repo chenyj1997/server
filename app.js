@@ -45,9 +45,10 @@ const app = express();
 // 配置 CORS
 app.use(cors({
     origin: [
-        'http://localhost:3000', 
+        'http://localhost:3000',
         'https://fw108ck86325.vicp.fun',
-        'https://node-2kvt.onrender.com'  // 请将此处替换为您的 Cloudflare Tunnel 域名
+        'https://your-domain.com',
+        'https://node-2kvt.onrender.com' // 允许Render前端服务访问
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -295,13 +296,14 @@ app.use('/api/wallet', protect, walletRoutes);
 app.use('/api/recharge', rechargeRoutes);
 app.use('/api/notifications', protect, notificationRoutes);
 app.use('/api/admin', adminAuth, adminRoutes);
-app.use('/api/recharge-paths', protect,rechargePathsRoutes);
+app.use('/api/recharge-paths', protect, rechargePathsRoutes);
 app.use('/api/transactions', protect, transactionRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/user', protect, userRouter);
 app.use('/api/customer-service', customerServiceRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/info', infoRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // 处理所有其他请求
 app.get('*', (req, res, next) => {
@@ -353,18 +355,17 @@ app.use((err, req, res, next) => {
 // 创建HTTP服务器实例
 const server = http.createServer(app);
 
-// 设置服务器端口
-const PORT = process.env.PORT || 8080;
+// 设置服务器端口 - 本地测试使用3030
+const PORT = process.env.PORT || 3030;
 
-// 启动服务器
+// 启动本地测试服务器
 server.listen(PORT, () => {
-    // console.log(`[${new Date().toISOString()}] 服务器运行在端口 ${PORT}`);
-    // console.log(`[${new Date().toISOString()}] HTTP 服务器: http://localhost:${PORT}`);
-    // console.log(`[${new Date().toISOString()}] 当前环境: ${process.env.NODE_ENV || 'development'}`);
-    // console.log(`[${new Date().toISOString()}] MongoDB URI: ${config.mongoURI}`);
-    // console.log(`[${new Date().toISOString()}] ------------------------------------`);
-    // console.log(`[${new Date().toISOString()}]        服务已成功启动!        `);
-    // console.log(`[${new Date().toISOString()}] ------------------------------------`);
+    console.log(`[本地测试] 服务器运行在 http://localhost:${PORT}`);
+    console.log(`[本地测试] 当前环境: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`[本地测试] MongoDB URI: ${config.mongoURI}`);
+    console.log(`[本地测试] ------------------------------------`);
+    console.log(`[本地测试]        本地服务已启动!        `);
+    console.log(`[本地测试] ------------------------------------`);
 });
 
 // 全局未捕获异常和未处理Promise拒绝处理
@@ -428,11 +429,31 @@ const formatLog = (message, type = 'INFO') => {
     return `[${timestamp}] [${type}] ${message}`;
 };
 
+// 安全地序列化对象
+const safeStringify = (obj) => {
+    try {
+        if (obj === null || obj === undefined) {
+            return String(obj);
+        }
+        if (typeof obj === 'object') {
+            // 对于文件对象等复杂对象，只显示关键信息
+            if (obj.constructor && obj.constructor.name === 'Object') {
+                return JSON.stringify(obj, null, 2);
+            } else {
+                return `[${obj.constructor ? obj.constructor.name : 'Object'}]`;
+            }
+        }
+        return String(obj);
+    } catch (error) {
+        return '[无法序列化的对象]';
+    }
+};
+
 // 重写console.log方法
 const originalConsoleLog = console.log;
 console.log = function() {
     const args = Array.from(arguments);
-    const message = args.join(' ');
+    const message = args.map(arg => safeStringify(arg)).join(' ');
     originalConsoleLog.call(console, formatLog(message));
 };
 
@@ -440,7 +461,7 @@ console.log = function() {
 const originalConsoleError = console.error;
 console.error = function() {
     const args = Array.from(arguments);
-    const message = args.join(' ');
+    const message = args.map(arg => safeStringify(arg)).join(' ');
     originalConsoleError.call(console, formatLog(message, 'ERROR'));
 };
 
@@ -448,7 +469,7 @@ console.error = function() {
 const originalConsoleWarn = console.warn;
 console.warn = function() {
     const args = Array.from(arguments);
-    const message = args.join(' ');
+    const message = args.map(arg => safeStringify(arg)).join(' ');
     originalConsoleWarn.call(console, formatLog(message, 'WARN'));
 };
 
