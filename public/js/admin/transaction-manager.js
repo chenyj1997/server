@@ -1142,7 +1142,7 @@ function bindTransactionReviewButtons() {
                     }
                 } else {
                     console.error('approveTransaction 函数未定义');
-                    if (typeof showError === 'function') showError('审核通过功能未实现');
+                    if (window.ui && window.ui.showError) window.ui.showError('审核通过功能未实现');
                 }
             });
         });
@@ -1165,7 +1165,7 @@ function bindTransactionReviewButtons() {
                     }
                 } else {
                     console.error('rejectTransaction 函数未定义');
-                    if (typeof showError === 'function') showError('审核拒绝功能未实现');
+                    if (window.ui && window.ui.showError) window.ui.showError('审核拒绝功能未实现');
                 }
             });
         });
@@ -1188,7 +1188,7 @@ function bindTransactionReviewButtons() {
                     }
                 } else {
                     console.error('未找到 proofUrl');
-                    if (typeof showError === 'function') showError('未找到凭证图片');
+                    if (window.ui && window.ui.showError) window.ui.showError('未找到凭证图片');
                 }
             });
         });
@@ -1203,7 +1203,7 @@ async function approveTransaction(id) {
     try {
         const token = localStorage.getItem('token');
         if (!token) {
-            if (typeof showError === 'function') showError('未登录，无法审核');
+            if (window.ui && window.ui.showError) window.ui.showError('未登录，无法审核');
             return;
         }
         const res = await fetch(`/api/transactions/${id}/review`, {
@@ -1216,18 +1216,23 @@ async function approveTransaction(id) {
         });
         const data = await res.json();
         if (data.success) {
-            if (typeof showSuccess === 'function') showSuccess('审核通过成功');
+            if (window.ui && window.ui.showSuccess) window.ui.showSuccess('审核通过成功');
             // 重新加载列表（你需要根据实际函数名调用刷新）
             if (typeof reloadTransactionList === 'function') {
                 reloadTransactionList();
+            } else if (typeof transactionManager !== 'undefined' && typeof transactionManager.getTransactionList === 'function') {
+                // 使用transactionManager刷新
+                await transactionManager.getTransactionList(1, 20, {});
             } else {
-                fetchTransactions();
+                // 如果都没有，尝试刷新页面
+                console.log('无法找到刷新函数，尝试刷新页面');
+                location.reload();
             }
         } else {
-            if (typeof showError === 'function') showError(data.message || '审核通过失败');
+            if (window.ui && window.ui.showError) window.ui.showError(data.message || '审核通过失败');
         }
     } catch (err) {
-        if (typeof showError === 'function') showError('审核通过出错: ' + err.message);
+        if (window.ui && window.ui.showError) window.ui.showError('审核通过出错: ' + err.message);
     }
 }
 
@@ -1235,7 +1240,7 @@ async function rejectTransaction(id) {
     try {
         const token = localStorage.getItem('token');
         if (!token) {
-            if (typeof showError === 'function') showError('未登录，无法审核');
+            if (window.ui && window.ui.showError) window.ui.showError('未登录，无法审核');
             return;
         }
         // 直接拒绝，不填写理由
@@ -1249,17 +1254,22 @@ async function rejectTransaction(id) {
         });
         const data = await res.json();
         if (data.success) {
-            if (typeof showSuccess === 'function') showSuccess('审核拒绝成功');
+            if (window.ui && window.ui.showSuccess) window.ui.showSuccess('审核拒绝成功');
             if (typeof reloadTransactionList === 'function') {
                 reloadTransactionList();
+            } else if (typeof transactionManager !== 'undefined' && typeof transactionManager.getTransactionList === 'function') {
+                // 使用transactionManager刷新
+                await transactionManager.getTransactionList(1, 20, {});
             } else {
-                fetchTransactions();
+                // 如果都没有，尝试刷新页面
+                console.log('无法找到刷新函数，尝试刷新页面');
+                location.reload();
             }
         } else {
-            if (typeof showError === 'function') showError(data.message || '审核拒绝失败');
+            if (window.ui && window.ui.showError) window.ui.showError(data.message || '审核拒绝失败');
         }
     } catch (err) {
-        if (typeof showError === 'function') showError('审核拒绝出错: ' + err.message);
+        if (window.ui && window.ui.showError) window.ui.showError('审核拒绝出错: ' + err.message);
     }
 }
 
