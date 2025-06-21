@@ -9,53 +9,36 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const RechargePath = require('../models/RechargePath');
+const cloudinary = require('../utils/cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// 配置multer用于文件上传
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        // 根据字段名确定上传目录
-        let targetDir;
-        if (file.fieldname === 'icon') {
-            targetDir = path.join(__dirname, '..', 'public', 'uploads', 'icons');
-        } else if (file.fieldname === 'qrCode') {
-            targetDir = path.join(__dirname, '..', 'public', 'uploads', 'qrcodes');
-        } else {
-            targetDir = path.join(__dirname, '..', 'public', 'uploads', 'icons');
-        }
-        
-        // 确保上传目录存在
-        if (!fs.existsSync(targetDir)) {
-            fs.mkdirSync(targetDir, { recursive: true });
-        }
-        
-        cb(null, targetDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}${path.extname(file.originalname)}`;
-        cb(null, uniqueName);
+// 配置 Cloudinary 存储
+const cloudinaryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'recharge-paths',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        transformation: [{ width: 500, height: 500, crop: 'limit' }]
     }
 });
 
+// 配置 multer 使用 Cloudinary 存储
 const upload = multer({
-    storage: storage,
+    storage: cloudinaryStorage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-    // 暂时移除文件过滤器，让 Multer 接收所有文件类型，我们稍后在路由中手动检查
-    // fileFilter: (req, file, cb) => {
-    //     if (file.mimetype.startsWith('image/')) {
-    //         cb(null, true);
-    //     } else {
-    //         cb(new Error('只允许上传图片文件'));
-    //     }
-    // }
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('只允许上传图片文件'));
+        }
+    }
 });
 
 // 将 Multer any() 中间件显式存储在变量中，接收所有字段的文件
 const uploadAnyMiddleware = upload.any();
 
-// 添加日志，确认 Multer 配置是否被加载
-console.log('RechargePathsRoutes: Multer configured. Expected fields:', upload.fields ? upload.fields.length : 'N/A'); // 这行日志可能仍然显示旧状态，但我们会使用 upload.any()
-console.log('RechargePathsRoutes: Checking upload.fields type and properties:', typeof upload.fields, Object.keys(upload.fields));
-console.log('RechargePathsRoutes: Full upload object inspection:', upload);
+console.log('RechargePathsRoutes: Cloudinary storage configured');
 
 // 获取充值路径列表
 router.get('/paths', async (req, res) => {
@@ -114,7 +97,7 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
     try {
         console.log('DEBUG: POST /api/recharge-paths 路由被触发');
         console.log('DEBUG: req.body:', req.body);
-        console.log('DEBUG: req.files:', req.files);
+        console.log('DEBUG: req.files 数量:', req.files ? req.files.length : 0);
 
         // 手动区分 icon 和 qrCode 文件
         const iconFile = req.files && req.files.find(file => file.fieldname === 'icon');
@@ -131,6 +114,8 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
         console.log('  sort:', sort, '类型:', typeof sort);
         console.log('  type:', type, '类型:', typeof type);
         console.log('  active:', active, '类型:', typeof active);
+        console.log('  iconFile:', iconFile ? '存在' : '不存在');
+        console.log('  qrcodeFile:', qrcodeFile ? '存在' : '不存在');
         
         // 验证必填字段
         if (!name || !account) {
@@ -140,29 +125,14 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
             });
         }
         
-        // 尝试创建一个最简单的对象
-        console.log('DEBUG: 尝试创建最简单的充值路径对象...');
-        const simplePath = new RechargePath({
-            name: String(name),
-            account: String(account),
-            type: 'other'
-        });
-        
-        console.log('DEBUG: 简单对象创建成功，尝试保存...');
-        await simplePath.save();
-        console.log('DEBUG: 简单对象保存成功');
-        
-        // 如果简单对象保存成功，再尝试创建完整对象
-        console.log('DEBUG: 尝试创建完整的充值路径对象...');
-        
-        // 创建新的充值路径对象
+        // 创建新的充值路径对象 - 使用 Cloudinary URL
         const pathData = {
             name: String(name || ''),
             account: String(account || ''),
             receiver: String(receiver || ''),
             type: String(type || 'other'),
-            icon: iconFile ? `/uploads/icons/${iconFile.filename}` : null,
-            qrCode: qrcodeFile ? `/uploads/qrcodes/${qrcodeFile.filename}` : null,
+            icon: iconFile ? iconFile.path : null, // Cloudinary 返回的 URL
+            qrCode: qrcodeFile ? qrcodeFile.path : null, // Cloudinary 返回的 URL
             sort: sort ? parseInt(sort) : 0,
             active: Boolean(active)
         };
@@ -219,12 +189,12 @@ router.put('/:id', uploadAnyMiddleware, async (req, res) => {
             });
         }
         
-        // 更新字段
+        // 更新字段 - 使用 Cloudinary URL
         path.name = name;
         path.account = account;
         path.receiver = receiver || '';
-        if (iconFile) path.icon = `/uploads/icons/${iconFile.filename}`;
-        if (qrcodeFile) path.qrCode = `/uploads/qrcodes/${qrcodeFile.filename}`;
+        if (iconFile) path.icon = iconFile.path; // Cloudinary 返回的 URL
+        if (qrcodeFile) path.qrCode = qrcodeFile.path; // Cloudinary 返回的 URL
         path.sort = sort ? parseInt(sort) : 0;
         path.active = active;
         
