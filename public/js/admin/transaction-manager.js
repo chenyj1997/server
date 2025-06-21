@@ -3,6 +3,9 @@
  * 将交易审核相关函数整合到全局transactionManager对象
  */
 
+// 全局变量
+let lastPendingCount = 0; // 用于跟踪上次的待处理数量
+
 // 创建全局交易管理对象
 function createTransactionManager() {
     const transactionManager = {};
@@ -1293,10 +1296,26 @@ document.body.addEventListener('click', function(e) {
 // 动态更新顶部交易审核红点徽章
 async function updateNavTransactionsBadge() {
   try {
+    const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+    if (!token) {
+      console.warn('No token available for updateNavTransactionsBadge');
+      return;
+    }
+    
     const res = await fetch('/api/transactions/pending/count', {
-      headers: { 'Authorization': localStorage.getItem('token') || localStorage.getItem('adminToken') }
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
+    
+    if (!res.ok) {
+      console.error('Failed to fetch pending count:', res.status, res.statusText);
+      return;
+    }
+    
     const data = await res.json();
+    
     // 交易审核红点
     const badge = document.getElementById('nav-transactions-badge');
     if (badge) {
@@ -1307,6 +1326,7 @@ async function updateNavTransactionsBadge() {
         badge.style.display = 'none';
       }
     }
+    
     // 客服未读红点
     const csBadge = document.getElementById('unread-messages-badge');
     if (csBadge) {
@@ -1317,6 +1337,7 @@ async function updateNavTransactionsBadge() {
         csBadge.style.display = 'none';
       }
     }
+    
     // 音效逻辑保持不变
     if (badge && csBadge) {
       if (lastPendingCount === 0 && (data.count > 0 || data.unreadCSCount > 0)) {
@@ -1330,7 +1351,9 @@ async function updateNavTransactionsBadge() {
       }
       lastPendingCount = (data.count || 0) + (data.unreadCSCount || 0);
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('Error updating nav transactions badge:', e);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
