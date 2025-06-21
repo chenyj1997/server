@@ -1,6 +1,7 @@
 const Info = require('../models/Info');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const SystemSetting = require('../models/SystemSetting');
 
 // Helper function to schedule automatic repayments
 const scheduleAutoRepayments = async () => {
@@ -79,7 +80,7 @@ const executeAutoRepayments = async () => {
                    }
 
                    const [buyer, author] = await Promise.all([
-                       User.findById(buyerId).select('balance'),
+                       User.findById(buyerId).select('balance referrer'),
                        User.findById(authorId).select('balance')
                    ]);
 
@@ -103,23 +104,78 @@ const executeAutoRepayments = async () => {
                    await author.save();
                    console.log(`Deducted ${repaymentAmount} from author ${authorId}. New balance: ${author.balance}`);
 
-                   // Add to buyer's balance
-                   buyer.balance += repaymentAmount;
+                   // 计算推荐人返利（如有）
+                   let rebateAmount = 0;
+                   let referrer = null;
+                   if (buyer.referrer) {
+                       // 获取返利设置
+                       const rebateSettings = await SystemSetting.findOne({ key: 'rebate_settings' });
+                       if (rebateSettings) {
+                           const { inviteRebatePercentage, minRebateAmount } = rebateSettings.value;
+                           
+                           // 计算返利金额 - 使用loanAmount（购买价格）而不是repaymentAmount（还款金额）
+                           const calculatedRebateAmount = (Number(info.loanAmount) * inviteRebatePercentage / 100);
+                           
+                           // 检查是否达到最低返利金额
+                           if (calculatedRebateAmount >= minRebateAmount) {
+                               referrer = await User.findById(buyer.referrer);
+                               if (referrer) {
+                                   rebateAmount = Math.floor(calculatedRebateAmount);
+                                   if (rebateAmount > 0) {
+                                       const referrerBalanceBefore = referrer.balance;
+                                       referrer.balance += rebateAmount;
+                                       await referrer.save();
+                                       const referrerBalanceAfter = referrer.balance;
+                                       
+                                       // 创建推荐人返利交易记录
+                                       await Transaction.create({
+                                           user: referrer._id,
+                                           type: 'REFERRAL_COMMISSION',
+                                           amount: rebateAmount,
+                                           status: 'approved',
+                                           paymentMethod: 'INTERNAL_SETTLEMENT',
+                                           paymentAccount: authorId.toString(),
+                                           receiveAccount: referrer._id.toString(),
+                                           remark: `获得推荐返利，${author.username || '系统'}自动还款`,
+                                           infoId: info._id,
+                                           createdAt: new Date(),
+                                           balanceBefore: referrerBalanceBefore,
+                                           balanceAfter: referrerBalanceAfter
+                                       });
+                                       
+                                       console.log(`Auto-repayment: Referrer ${referrer.username} received rebate ${rebateAmount}, balance from ${referrerBalanceBefore} to ${referrerBalanceAfter}`);
+                                   }
+                               }
+                           } else {
+                               console.log(`Auto-repayment: Rebate amount ${calculatedRebateAmount} below minimum ${minRebateAmount}, skipping rebate for info ${info._id}`);
+                           }
+                       } else {
+                           console.log(`Auto-repayment: No rebate settings found, skipping rebate for info ${info._id}`);
+                       }
+                   }
+
+                   // 计算买家实际收款金额（还款金额-返利）
+                   const buyerReceiveAmount = repaymentAmount - rebateAmount;
+                   
+                   // Add to buyer's balance (only the amount after rebate deduction)
+                   buyer.balance += buyerReceiveAmount;
                    await buyer.save();
-                   console.log(`Added ${repaymentAmount} to buyer ${buyerId}. New balance: ${buyer.balance}`);
+                   console.log(`Added ${buyerReceiveAmount} to buyer ${buyerId}. New balance: ${buyer.balance}`);
 
                     // Create a transaction record for the repayment
                     await Transaction.create({
-                        user: authorId, // Author is the one initiating the repayment transaction
+                        user: buyerId, // Buyer is the one receiving the repayment
                         type: 'repay', // Repayment type
-                        amount: repaymentAmount,
+                        amount: buyerReceiveAmount,
                         status: 'approved', // Auto-repayment is considered approved
                         paymentMethod: 'balance', // Assuming balance payment
                         paymentAccount: authorId.toString(), // Author's account
                         receiveAccount: buyerId.toString(), // Buyer's account
                         remark: `信息到期自动还款: ${info.title || info._id}`, // Transaction remark
                         infoId: info._id,
-                        createdAt: new Date()
+                        createdAt: new Date(),
+                        balanceBefore: buyer.balance - buyerReceiveAmount,
+                        balanceAfter: buyer.balance
                     });
                     console.log(`Created repayment transaction for info ${info._id}`);
 
