@@ -305,11 +305,23 @@ router.post('/recharge', upload.single('proof'), async (req, res) => {
 
         // 创建充值交易前，查用户余额
         const user = await User.findById(req.user.id);
+        
+        // 映射充值路径类型到Transaction允许的paymentMethod
+        const getPaymentMethod = (rechargePathType) => {
+            const typeMapping = {
+                'alipay': 'alipay',
+                'wechat': 'wechatpay',
+                'bank': 'bank',
+                'other': 'manual' // 将'other'映射为'manual'
+            };
+            return typeMapping[rechargePathType] || 'manual';
+        };
+        
         const transaction = new Transaction({
             user: req.user.id,
             type: 'recharge',
             amount: parseFloat(amount),
-            paymentMethod: rechargePath.type || 'online',
+            paymentMethod: getPaymentMethod(rechargePath.type),
             paymentAccount: rechargePath.account || 'default',
             receiveAccount: rechargePath.receiver || 'system',
             proof: proofPath,
