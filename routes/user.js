@@ -328,7 +328,6 @@ router.get('/invited-users', protect, async (req, res) => {
 router.get('/:id', protect, async (req, res) => {
     try {
         const userId = req.params.id;
-        
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({
                 success: false,
@@ -336,9 +335,9 @@ router.get('/:id', protect, async (req, res) => {
             });
         }
 
-        const user = await User.findById(userId)
-            .select('-password -payPassword hasPayPassword payPasswordLockUntil') // 显式选择支付密码状态相关字段
-            .populate('referrer', 'username inviteCode'); // 填充推荐人信息
+        let user = await User.findById(userId)
+            .select('-password -payPassword hasPayPassword payPasswordLockUntil')
+            .populate('referrer', 'username inviteCode');
 
         if (!user) {
             return res.status(404).json({
@@ -347,9 +346,10 @@ router.get('/:id', protect, async (req, res) => {
             });
         }
 
-        console.log(`[${new Date().toISOString()}] DEBUG: User ID: ${userId}`);
-        console.log(`[${new Date().toISOString()}] DEBUG: hasPayPassword: ${user.hasPayPassword}`);
-        console.log(`[${new Date().toISOString()}] DEBUG: payPasswordLockUntil: ${user.payPasswordLockUntil}`);
+        // 自动修正：如果referrer不是合法对象或populate失败，置为null
+        if (!user.referrer || (typeof user.referrer === 'object' && !user.referrer._id)) {
+            user.referrer = null;
+        }
 
         // 计算支付密码状态
         let paymentPasswordStatus = '未设置';
@@ -370,7 +370,7 @@ router.get('/:id', protect, async (req, res) => {
             data: userData
         });
     } catch (error) {
-        console.error('获取用户信息失败:', error);
+        console.error('获取用户信息失败:', error, error.stack);
         res.status(500).json({
             success: false,
             message: '获取用户信息失败',
