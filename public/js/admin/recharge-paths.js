@@ -11,7 +11,7 @@ async function getRechargePaths() {
             throw new Error('用户未登录');
         }
 
-        const response = await fetch('/api/recharge-paths/list', {
+        const response = await fetch('/api/recharge-paths//paths', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
