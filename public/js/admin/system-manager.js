@@ -651,3 +651,141 @@ const adManager = {
 document.addEventListener('DOMContentLoaded', () => {
     adManager.init();
 }); 
+
+const createFolderManager = () => {
+    let coverImageFiles = [];
+    let additionalImageFiles = [];
+    // 新增一个游标来跟踪用过的图片
+    let coverImageCursor = 0;
+    let additionalImageCursor = 0;
+
+    return {
+        // ... (保持 loadFiles, getStats 不变) ...
+        loadFiles: (coverFiles, additionalFiles, deleteAfterUse) => {
+            coverImageFiles = Array.from(coverFiles);
+            additionalImageFiles = Array.from(additionalFiles);
+            // 重置游标
+            coverImageCursor = 0;
+            additionalImageCursor = 0;
+            
+            console.log(`[FolderManager] Loaded ${coverImageFiles.length} cover images and ${additionalImageFiles.length} additional images.`);
+            
+            // 基于deleteAfterUse参数，这里可以决定加载后是否要从本地删除，但目前我们只在内存中操作
+        },
+
+        getStats: () => {
+            return {
+                totalCover: coverImageFiles.length,
+                totalAdditional: additionalImageFiles.length,
+                // 新增：返回剩余图片数量
+                remainingCover: coverImageFiles.length - coverImageCursor,
+                remainingAdditional: additionalImageFiles.length - additionalImageCursor,
+            };
+        },
+
+        // 核心修改：实现"用完即删"的逻辑
+        getFilesForUpload: () => {
+            // 从系统设置中获取每次选择的数量
+            const coverCount = parseInt(document.getElementById('cover-image-count')?.value || 1);
+            const additionalCount = parseInt(document.getElementById('additional-image-count')?.value || 3);
+            
+            // 检查剩余图片是否足够
+            const remainingCover = coverImageFiles.length - coverImageCursor;
+            const remainingAdditional = additionalImageFiles.length - additionalImageCursor;
+
+            if (remainingCover < coverCount || remainingAdditional < additionalCount) {
+                 // 如果任何一种图片不足，就提示用户并返回空数组
+                 const errorMessage = `剩余图片不足。需要封面: ${coverCount} (剩余: ${remainingCover}), 需要更多照片: ${additionalCount} (剩余: ${remainingAdditional})。请重新加载图片。`;
+                 // 使用 window.ui (如果存在) 显示错误
+                 if (window.ui && window.ui.showError) {
+                     window.ui.showError(errorMessage);
+                 } else {
+                    alert(errorMessage);
+                 }
+                 // 返回空，让调用方知道没有文件可用
+                 return { coverFiles: [], additionalFiles: [] };
+            }
+
+            // 从当前游标位置"切片"所需数量的图片
+            const coverFilesToUpload = coverImageFiles.slice(coverImageCursor, coverImageCursor + coverCount);
+            const additionalFilesToUpload = additionalImageFiles.slice(additionalImageCursor, additionalImageCursor + additionalCount);
+            
+            // *关键*：移动游标，标记这些图片为"已使用"
+            coverImageCursor += coverCount;
+            additionalImageCursor += additionalCount;
+            
+            console.log(`[FolderManager] Providing ${coverFilesToUpload.length} cover and ${additionalFilesToUpload.length} additional files.`);
+            console.log(`[FolderManager] Next cover cursor at: ${coverImageCursor}, Next additional cursor at: ${additionalImageCursor}`);
+
+            // 更新状态显示
+            const stats = document.getElementById('folder-stats');
+            if (stats) {
+                const newStats = `
+                    封面图: ${coverImageFiles.length} (剩余: ${coverImageFiles.length - coverImageCursor}) | 
+                    更多照片: ${additionalImageFiles.length} (剩余: ${additionalImageFiles.length - additionalImageCursor})
+                `;
+                stats.innerHTML = newStats;
+            }
+
+            return {
+                coverFiles: coverFilesToUpload,
+                additionalFiles: additionalFilesToUpload,
+            };
+        },
+
+        // 新增一个重置方法，方便重新开始
+        reset: () => {
+            coverImageFiles = [];
+            additionalImageFiles = [];
+            coverImageCursor = 0;
+            additionalImageCursor = 0;
+            console.log('[FolderManager] Manager has been reset.');
+            const stats = document.getElementById('folder-stats');
+            if (stats) {
+                stats.innerHTML = '请加载图片文件夹。';
+            }
+        }
+    };
+};
+
+const folderManager = createFolderManager();
+// 将 folderManager 挂载到 window 对象，以便在 info.js 中访问
+window.folderManager = folderManager;
+
+// ... (systemManager的其余代码) ...
+
+// 在 systemManager 的 initSystemPage 中，我们确保事件被正确绑定
+// ... 之前的 initSystemPage 代码 ...
+// ...
+            // 绑定"加载图片"按钮事件
+            const loadBtn = document.getElementById('load-images-btn');
+            if (loadBtn) {
+                loadBtn.onclick = async () => {
+                    const coverInput = document.getElementById('cover-image-folder');
+                    const additionalInput = document.getElementById('additional-image-folder');
+                    const deleteCheckbox = document.getElementById('delete-after-use');
+
+                    if (coverInput.files.length === 0 || additionalInput.files.length === 0) {
+                        window.ui.showError('请同时选择封面图片和更多照片文件夹');
+                        return;
+                    }
+
+                    // 调用 folderManager 的 loadFiles 方法
+                    window.folderManager.loadFiles(coverInput.files, additionalInput.files, deleteCheckbox.checked);
+                    
+                    // 更新统计显示
+                    const stats = window.folderManager.getStats();
+                    const statsEl = document.getElementById('folder-stats');
+                    if (statsEl) {
+                        statsEl.innerHTML = `
+                            封面图: ${stats.totalCover} (剩余: ${stats.remainingCover}) | 
+                            更多照片: ${stats.totalAdditional} (剩余: ${stats.remainingAdditional})
+                        `;
+                    }
+                    window.ui.showSuccess('图片已加载到浏览器内存队列中。');
+                };
+            }
+
+            // 绑定"保存设置"按钮
+            const saveBtn = document.getElementById('save-system-settings-btn');
+// ... (后续代码) ... 
