@@ -63,29 +63,29 @@ async function uploadImage(file) {
             throw new Error(data.message || '上传失败');
         }
 
-        // 处理返回的数据
-        let imageUrl;
-        if (typeof data.data === 'string') {
-            // 如果data.data是字符串，直接使用
-            imageUrl = data.data;
-        } else if (Array.isArray(data.data)) {
-            // 如果是数组，取第一个文件的URL
-            imageUrl = data.data[0].url;
-        } else if (data.data && data.data.url) {
-            // 如果是单个对象
-            imageUrl = data.data.url;
-        } else if (data.url) {
-            // 直接返回url字段
-            imageUrl = data.url;
-        } else {
+        // 简化数据处理逻辑，优先使用 url 字段，然后是 data 字段
+        let imageUrl = data.url || data.data;
+        
+        // 如果 imageUrl 是数组，取第一个
+        if (Array.isArray(imageUrl)) {
+            imageUrl = imageUrl[0];
+        }
+        
+        // 如果 imageUrl 是对象，尝试获取 url 属性
+        if (typeof imageUrl === 'object' && imageUrl !== null) {
+            imageUrl = imageUrl.url || imageUrl.secure_url;
+        }
+
+        if (!imageUrl) {
             throw new Error('服务器返回的数据格式不正确');
         }
 
-        // 确保URL是完整的
-        if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
-            imageUrl = '/' + imageUrl;
+        // 确保URL是完整的Cloudinary URL
+        if (!imageUrl.startsWith('http')) {
+            throw new Error('图片URL格式不正确');
         }
 
+        console.log('图片上传成功，URL:', imageUrl);
         return imageUrl;
     } catch (error) {
         console.error('图片上传失败:', error);
@@ -797,7 +797,9 @@ const createInfoManager = () => {
                         <td colspan="3">
                             <div class="d-flex flex-wrap info-detail-align">
                                 ${info.imageUrls.map(imageUrl => {
-                                    const fullUrl = !imageUrl.startsWith('http') && !imageUrl.startsWith('/') ? '/' + imageUrl : imageUrl;
+                                    // 修复：Cloudinary的完整URL不应该被修改
+                                    // 只有相对路径才需要添加前缀
+                                    const fullUrl = !imageUrl.startsWith('http') && !imageUrl.startsWith('/') && !imageUrl.startsWith('data:') ? '/' + imageUrl : imageUrl;
                                     return `<img src="${fullUrl}" class="img-thumbnail m-1" style="width: 80px; height: 80px; object-fit: cover;" onerror="this.style.display='none';">`;
                                 }).join('')}
                             </div>
@@ -1117,7 +1119,10 @@ const createInfoManager = () => {
                 } else if (Array.isArray(info.images) && info.images.length > 0) {
                     imageUrl = info.images[0];
                 }
-                if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+                
+                // 修复：Cloudinary的完整URL不应该被修改
+                // 只有相对路径才需要添加前缀
+                if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/') && !imageUrl.startsWith('data:')) {
                     imageUrl = '/' + imageUrl;
                 }
 
