@@ -115,9 +115,8 @@ router.post('/test', protect, async (req, res) => {
 router.get('/unread/count', protect, async (req, res) => {
     try {
         const count = await Notification.countDocuments({
-            user: req.user._id,
-            isRead: false,
-            type: 'SYSTEM' // 新的逻辑：只计算系统公告的未读数
+            type: 'SYSTEM', // 只计算系统公告的未读数
+            status: 'ACTIVE' // 只计算活跃状态的通知
         });
         res.json({ success: true, data: count });
     } catch (error) {
@@ -174,9 +173,20 @@ router.post('/', protect, async (req, res) => {
 router.get('/list', protect, async (req, res) => {
     try {
         const { type, status, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
-        const query = { user: req.user._id };
-        if (type) query.type = type;
+        const query = {};
+        
+        // 如果是系统通知，所有用户都可以看到
+        if (type === 'SYSTEM') {
+            query.type = 'SYSTEM';
+            // 不限制用户ID，让所有用户都能看到系统通知
+        } else {
+            // 对于其他类型的通知，只查询当前用户的通知
+            query.user = req.user._id;
+            if (type) query.type = type;
+        }
+        
         if (status) query.status = status;
+        
         const notifications = await Notification.find(query)
             .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
             .limit(parseInt(limit));
