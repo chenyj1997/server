@@ -68,12 +68,7 @@ router.post('/register', async (req, res) => {
         }
 
         // 查找推荐人
-        const referrerUser = await User.findOne({ 
-            $or: [
-                { numericId: referrerCode },
-                { inviteCode: referrerCode }
-            ]
-        });
+        const referrerUser = await User.findOne({ inviteCode: referrerCode });
 
         if (!referrerUser) {
             return res.status(400).json({
@@ -137,7 +132,7 @@ router.post('/login', async (req, res) => {
         // DEBUG: 打印接收到的用户名和密码 - 临时日志，请勿用于生产环境！
         console.log('[DEBUG] 收到登录请求，用户名:', username, '密码:', password);
 
-        // 查询时直接lean返回全部字段，避免select遗漏numericId
+        // 查询时直接lean返回全部字段，避免select遗漏inviteCode
         const user = await User.findOne({ username }).lean();
         
         // DEBUG: 打印用户查找结果 - 临时日志
