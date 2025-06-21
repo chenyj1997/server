@@ -640,28 +640,40 @@ async function distributeSaleFundsAsync(infoId, buyerUserId, totalAmountPaid) {
         let rebateAmount = 0;
         let referrer = null;
         if (buyerUser && buyerUser.referrer) {
-            referrer = await User.findById(buyerUser.referrer);
-            if (referrer) {
-                rebateAmount = Math.floor(Number(totalAmountPaid) * 0.1);
-                if (rebateAmount > 0) {
-                    const referrerBalanceBefore = referrer.balance;
-                    referrer.balance += rebateAmount;
-                    await referrer.save();
-                    const referrerBalanceAfter = referrer.balance;
-                    await Transaction.create({
-                        user: referrer._id,
-                        type: 'REFERRAL_COMMISSION',
-                        amount: rebateAmount,
-                        status: 'approved',
-                        paymentMethod: 'INTERNAL_SETTLEMENT',
-                        paymentAccount: buyerUser ? buyerUser._id.toString() : null,
-                        receiveAccount: referrer._id.toString(),
-                        remark: `获得推荐返利，${buyerUser ? buyerUser.username : ''}还款`,
-                        infoId: info._id,
-                        createdAt: new Date(),
-                        balanceBefore: referrerBalanceBefore,
-                        balanceAfter: referrerBalanceAfter
-                    });
+            // 获取返利设置
+            const rebateSettings = await SystemSetting.findOne({ key: 'rebate_settings' });
+            if (rebateSettings) {
+                const { inviteRebatePercentage, minRebateAmount } = rebateSettings.value;
+                
+                // 计算返利金额
+                const calculatedRebateAmount = (Number(totalAmountPaid) * inviteRebatePercentage / 100);
+                
+                // 检查是否达到最低返利金额
+                if (calculatedRebateAmount >= minRebateAmount) {
+                    referrer = await User.findById(buyerUser.referrer);
+                    if (referrer) {
+                        rebateAmount = Math.floor(calculatedRebateAmount);
+                        if (rebateAmount > 0) {
+                            const referrerBalanceBefore = referrer.balance;
+                            referrer.balance += rebateAmount;
+                            await referrer.save();
+                            const referrerBalanceAfter = referrer.balance;
+                            await Transaction.create({
+                                user: referrer._id,
+                                type: 'REFERRAL_COMMISSION',
+                                amount: rebateAmount,
+                                status: 'approved',
+                                paymentMethod: 'INTERNAL_SETTLEMENT',
+                                paymentAccount: buyerUser ? buyerUser._id.toString() : null,
+                                receiveAccount: referrer._id.toString(),
+                                remark: `获得推荐返利，${buyerUser ? buyerUser.username : ''}还款`,
+                                infoId: info._id,
+                                createdAt: new Date(),
+                                balanceBefore: referrerBalanceBefore,
+                                balanceAfter: referrerBalanceAfter
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -686,7 +698,6 @@ async function distributeSaleFundsAsync(infoId, buyerUserId, totalAmountPaid) {
             receiveAccount: buyerUser ? buyerUser._id.toString() : '',
             remark: buyerUser ? `收到 ${buyerUser.username} 的还款` : '收到还款',
             infoId: info._id,
-            overdueFee: 0,
             createdAt: new Date(),
             balanceBefore: buyerBalanceBefore,
             balanceAfter: buyerBalanceAfter
@@ -826,14 +837,9 @@ router.post('/:id/repay', protect, restrictToAdmin, async (req, res) => {
             });
         }
 
-        // 检查是否逾期
-        const isOverdue = new Date() > info.expiryTime;
-        const overdueDays = isOverdue ? Math.floor((new Date() - info.expiryTime) / (1000 * 60 * 60 * 24)) : 0;
-        const overdueFee = isOverdue ? Number(info.repaymentAmount) * 0.01 * overdueDays : 0; // 每天1%的逾期费
-
-        // 还款方扣钱（还款金额+逾期费）
+        // 还款方扣钱（只扣还款金额）
         const authorBalanceBefore = user.balance;
-        user.balance -= (Number(info.repaymentAmount) + overdueFee);
+        user.balance -= Number(info.repaymentAmount);
         await user.save();
         const authorBalanceAfter = user.balance;
 
@@ -847,50 +853,45 @@ router.post('/:id/repay', protect, restrictToAdmin, async (req, res) => {
         }
         let buyerBalanceBefore = 0;
         let buyerBalanceAfter = 0;
-        if (buyer) {
-            buyerBalanceBefore = buyer.balance;
-            buyer.balance += Number(info.repaymentAmount);
-            await buyer.save();
-            buyerBalanceAfter = buyer.balance;
-        }
-
-        // 管理员只收逾期费
-        const admin = await User.findOne({ role: 'admin' });
-        let adminBalanceBefore = 0;
-        let adminBalanceAfter = 0;
-        if (admin && overdueFee > 0) {
-            adminBalanceBefore = admin.balance;
-            admin.balance += overdueFee;
-            await admin.save();
-            adminBalanceAfter = admin.balance;
-        }
-
+        
         // 计算推荐人返利（如有）
         let rebateAmount = 0;
         let referrer = null;
         if (buyer && buyer.referrer) {
-            referrer = await User.findById(buyer.referrer);
-            if (referrer) {
-                rebateAmount = Math.floor(Number(info.repaymentAmount) * 0.1);
-                if (rebateAmount > 0) {
-                    const referrerBalanceBefore = referrer.balance;
-                    referrer.balance += rebateAmount;
-                    await referrer.save();
-                    const referrerBalanceAfter = referrer.balance;
-                    await Transaction.create({
-                        user: referrer._id,
-                        type: 'REFERRAL_COMMISSION',
-                        amount: rebateAmount,
-                        status: 'approved',
-                        paymentMethod: 'INTERNAL_SETTLEMENT',
-                        paymentAccount: user ? user._id.toString() : null,
-                        receiveAccount: referrer._id.toString(),
-                        remark: `获得推荐返利，${user ? user.username : ''}还款`,
-                        infoId: info._id,
-                        createdAt: new Date(),
-                        balanceBefore: referrerBalanceBefore,
-                        balanceAfter: referrerBalanceAfter
-                    });
+            // 获取返利设置
+            const rebateSettings = await SystemSetting.findOne({ key: 'rebate_settings' });
+            if (rebateSettings) {
+                const { inviteRebatePercentage, minRebateAmount } = rebateSettings.value;
+                
+                // 计算返利金额
+                const calculatedRebateAmount = (Number(info.repaymentAmount) * inviteRebatePercentage / 100);
+                
+                // 检查是否达到最低返利金额
+                if (calculatedRebateAmount >= minRebateAmount) {
+                    referrer = await User.findById(buyer.referrer);
+                    if (referrer) {
+                        rebateAmount = Math.floor(calculatedRebateAmount);
+                        if (rebateAmount > 0) {
+                            const referrerBalanceBefore = referrer.balance;
+                            referrer.balance += rebateAmount;
+                            await referrer.save();
+                            const referrerBalanceAfter = referrer.balance;
+                            await Transaction.create({
+                                user: referrer._id,
+                                type: 'REFERRAL_COMMISSION',
+                                amount: rebateAmount,
+                                status: 'approved',
+                                paymentMethod: 'INTERNAL_SETTLEMENT',
+                                paymentAccount: user ? user._id.toString() : null,
+                                receiveAccount: referrer._id.toString(),
+                                remark: `获得推荐返利，${user ? user.username : ''}还款`,
+                                infoId: info._id,
+                                createdAt: new Date(),
+                                balanceBefore: referrerBalanceBefore,
+                                balanceAfter: referrerBalanceAfter
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -911,32 +912,11 @@ router.post('/:id/repay', protect, restrictToAdmin, async (req, res) => {
             receiveAccount: buyer ? buyer._id.toString() : '',
             remark: user ? `收到 ${user.username} 的还款` : '收到还款',
             infoId: info._id,
-            overdueFee: overdueFee,
             createdAt: new Date(),
             balanceBefore: buyerBalanceBefore,
             balanceAfter: buyerBalanceAfter
         };
         await Transaction.create(repayTransaction);
-
-        // 管理员的逾期费交易记录
-        if (admin && overdueFee > 0) {
-            const adminTransaction = {
-                user: admin._id,
-                type: 'repay',
-                amount: overdueFee,
-                status: 'approved',
-                paymentMethod: 'balance',
-                paymentAccount: user._id.toString(),
-                receiveAccount: admin._id.toString(),
-                remark: '收到逾期还款手续费',
-                infoId: info._id,
-                overdueFee: overdueFee,
-                createdAt: new Date(),
-                balanceBefore: adminBalanceBefore,
-                balanceAfter: adminBalanceAfter
-            };
-            await Transaction.create(adminTransaction);
-        }
 
         // 删除信息，结束交易
         console.log(`准备删除信息: ${info._id}`); // Added log before delete
@@ -948,8 +928,7 @@ router.post('/:id/repay', protect, restrictToAdmin, async (req, res) => {
             message: '还款成功，交易已结束',
             data: {
                 repaymentAmount: info.repaymentAmount,
-                overdueFee: overdueFee,
-                totalAmount: Number(info.repaymentAmount) + overdueFee
+                totalAmount: Number(info.repaymentAmount)
             }
         });
     } catch (error) {
