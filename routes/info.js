@@ -85,8 +85,10 @@ router.post('/upload/image', protect, upload.single('file'), async (req, res) =>
         fs.unlinkSync(req.file.path);
         res.json({
             success: true,
-            data: result.secure_url,
-            url: result.secure_url
+            data: {
+                url: result.secure_url
+            },
+            url: result.secure_url // 保持向后兼容
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message || '图片上传失败' });
