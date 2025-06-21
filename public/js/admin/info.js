@@ -1415,7 +1415,7 @@ const createInfoManager = () => {
              if (oldChangeListener) {
                  imageUpload.onchange = null; // 或者使用 removeEventListener
              }
-            imageUpload.onchange = handleImageUpload;
+            imageUpload.onchange = handleImageUpload; // 这里可以直接调用，因为在这个作用域内函数已定义
         }
 
         // 分页点击事件
@@ -1464,7 +1464,8 @@ const createInfoManager = () => {
         deleteImageFromModal, // 导出删除图片函数
         goToPage, // 导出分页跳转函数
         deleteInfoConfirm, // 导出删除确认函数
-        repayInfo // 导出还款函数，确保按钮可用
+        repayInfo, // 导出还款函数，确保按钮可用
+        handleImageUpload // 导出图片上传函数
     };
 };
 
@@ -1488,14 +1489,14 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.appendChild(previewContainer);
         }
     }
-    // 2. 自动绑定 input 事件
+    // 2. 自动绑定 input 事件 - 通过 infoManager 调用
     const coverInput = document.getElementById('cover-image');
-    if (coverInput) {
-        coverInput.addEventListener('change', handleImageUpload);
+    if (coverInput && window.infoManager) {
+        coverInput.addEventListener('change', window.infoManager.handleImageUpload);
     }
     const additionalInput = document.getElementById('additional-images');
-    if (additionalInput) {
-        additionalInput.addEventListener('change', handleImageUpload);
+    if (additionalInput && window.infoManager) {
+        additionalInput.addEventListener('change', window.infoManager.handleImageUpload);
     }
 });
 
