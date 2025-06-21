@@ -120,7 +120,7 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
         const iconFile = req.files && req.files.find(file => file.fieldname === 'icon');
         const qrcodeFile = req.files && req.files.find(file => file.fieldname === 'qrCode');
 
-        const { name, account, receiver, sort } = req.body;
+        const { name, account, receiver, sort, type } = req.body;
         const active = req.body.isActive === 'true' || req.body.isActive === true;
         
         // 验证必填字段
@@ -136,6 +136,7 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
             name,
             account,
             receiver: receiver || '',
+            type: type || 'other',
             icon: iconFile ? `/uploads/icons/${iconFile.filename}` : null,
             qrCode: qrcodeFile ? `/uploads/qrcodes/${qrcodeFile.filename}` : null,
             sort: sort ? parseInt(sort) : 0,
