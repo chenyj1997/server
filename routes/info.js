@@ -1135,19 +1135,15 @@ router.post('/:id/purchase', protect, async (req, res) => {
     // 记录购买表
     await Purchase.create({ info: infoId, buyer: userId, createdAt: new Date() });
     console.log('[购买接口] Purchase 记录已创建');
-    // 记录交易表
-    console.log('[购买接口] Transaction.create 参数:', {
-      user: userId,
-      type: 'purchase',
-      amount: -price,
-      status: 'approved',
-      paymentMethod: 'INTERNAL_SETTLEMENT',
-      paymentAccount: userId.toString(),
-      receiveAccount: info.author ? info.author.toString() : '',
-      remark: `购买信息: ${info.title}`,
-      balanceBefore: user.balance,
-      balanceAfter: user.balance - price
-    });
+    
+    // 1. **买家扣款**
+    const buyerBalanceBefore = user.balance;
+    user.balance -= price;
+    await user.save();
+    const buyerBalanceAfter = user.balance;
+    console.log('[购买接口] 扣款后用户余额:', user.balance);
+    
+    // 2. **记录买家交易**
     await Transaction.create({
       user: userId,
       type: 'purchase',
@@ -1157,14 +1153,43 @@ router.post('/:id/purchase', protect, async (req, res) => {
       paymentAccount: userId.toString(),
       receiveAccount: info.author ? info.author.toString() : '',
       remark: `购买信息: ${info.title}`,
-      balanceBefore: user.balance,
-      balanceAfter: user.balance - price
+      balanceBefore: buyerBalanceBefore,
+      balanceAfter: buyerBalanceAfter
     });
-    console.log('[购买接口] Transaction 记录已创建');
-    // 最后扣款
-    user.balance -= price;
-    await user.save();
-    console.log('[购买接口] 扣款后用户余额:', user.balance);
+    console.log('[购买接口] 买家 Transaction 记录已创建');
+    
+    // 3. **卖家收款**
+    if (info.author) {
+        const author = await User.findById(info.author);
+        if (author) {
+            const authorBalanceBefore = author.balance;
+            author.balance += price;
+            await author.save();
+            const authorBalanceAfter = author.balance;
+
+            // 4. **记录卖家交易**
+            await Transaction.create({
+                user: author._id,
+                type: 'SALE_PROCEEDS',
+                amount: price,
+                status: 'approved',
+                paymentMethod: 'INTERNAL_SETTLEMENT',
+                remark: `出售信息获得收入: ${info.title}`,
+                infoId: info._id,
+                balanceBefore: authorBalanceBefore,
+                balanceAfter: authorBalanceAfter,
+                paymentAccount: userId.toString(),
+                receiveAccount: author._id.toString(),
+            });
+            console.log(`[购买接口] 卖家 ${author.username} 已收款，新余额: ${authorBalanceAfter}`);
+        } else {
+            console.error(`[购买接口] 未找到ID为 ${info.author} 的卖家`);
+        }
+    } else {
+        console.error(`[购买接口] 信息 ${info._id} 没有作者`);
+    }
+
+    // 5. **最后响应**
     res.json({ success: true, message: '购买成功' });
   } catch (error) {
     console.error('[购买接口] 购买信息接口错误:', error);
