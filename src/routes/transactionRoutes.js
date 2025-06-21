@@ -216,43 +216,60 @@ router.post('/:id/review', [protect, restrictToAdmin], async (req, res) => {
                 if (user.referrer) {
                     const referrer = await User.findById(user.referrer);
                     if (referrer) {
-                        // 计算返利金额（假设返利比例为10%）
-                        const rebateAmount = Number(transaction.amount) * 0.1;
-                        const referrerOldBalance = referrer.balance;
-                        referrer.balance = Number(referrerOldBalance) + rebateAmount;
-                        await referrer.save();
-                        console.log(`返利发放: 推荐人 ${referrer.username} 获得返利 ${rebateAmount}, 余额从 ${referrerOldBalance} 增加到 ${referrer.balance}`);
+                        // 获取返利设置
+                        const SystemSetting = mongoose.model('SystemSetting');
+                        const rebateSettings = await SystemSetting.findOne({ key: 'rebate_settings' });
+                        
+                        if (rebateSettings) {
+                            const { inviteRebatePercentage, minRebateAmount } = rebateSettings.value;
+                            
+                            // 计算返利金额
+                            const calculatedRebateAmount = (Number(transaction.amount) * inviteRebatePercentage / 100);
+                            
+                            // 检查是否达到最低返利金额
+                            if (calculatedRebateAmount >= minRebateAmount) {
+                                const rebateAmount = Math.floor(calculatedRebateAmount);
+                                const referrerOldBalance = referrer.balance;
+                                referrer.balance = Number(referrerOldBalance) + rebateAmount;
+                                await referrer.save();
+                                console.log(`返利发放: 推荐人 ${referrer.username} 获得返利 ${rebateAmount}, 余额从 ${referrerOldBalance} 增加到 ${referrer.balance}`);
 
-                        // 创建返利记录
-                        const rebateTransaction = new Transaction({
-                            user: referrer._id,
-                            type: 'rebate',
-                            amount: rebateAmount,
-                            status: 'completed',
-                            paymentMethod: 'INTERNAL_SETTLEMENT',
-                            paymentAccount: 'SYSTEM',
-                            receiveAccount: referrer._id.toString(),
-                            remark: `来自用户 ${user.username} 的还款返利`,
-                            relatedTransaction: transaction._id,
-                            balanceBefore: referrerOldBalance,
-                            balanceAfter: referrer.balance
-                        });
-                        await rebateTransaction.save();
-                        console.log('返利交易记录已创建');
+                                // 创建返利记录
+                                const rebateTransaction = new Transaction({
+                                    user: referrer._id,
+                                    type: 'rebate',
+                                    amount: rebateAmount,
+                                    status: 'completed',
+                                    paymentMethod: 'INTERNAL_SETTLEMENT',
+                                    paymentAccount: 'SYSTEM',
+                                    receiveAccount: referrer._id.toString(),
+                                    remark: `来自用户 ${user.username} 的还款返利`,
+                                    relatedTransaction: transaction._id,
+                                    balanceBefore: referrerOldBalance,
+                                    balanceAfter: referrer.balance
+                                });
+                                await rebateTransaction.save();
+                                console.log('返利交易记录已创建');
 
-                        // 创建返利余额变动记录
-                        const BalanceLog = mongoose.model('BalanceLog');
-                        const balanceLog = new BalanceLog({
-                            user: referrer._id,
-                            type: 'rebate',
-                            amount: rebateAmount,
-                            beforeBalance: referrerOldBalance,
-                            afterBalance: referrer.balance,
-                            transaction: rebateTransaction._id,
-                            remark: `来自用户 ${user.username} 的还款返利`
-                        });
-                        await balanceLog.save();
-                        console.log('返利余额变动记录已创建');
+                                // 创建返利余额变动记录
+                                const BalanceLog = mongoose.model('BalanceLog');
+                                const balanceLog = new BalanceLog({
+                                    user: referrer._id,
+                                    type: 'rebate',
+                                    amount: rebateAmount,
+                                    beforeBalance: referrerOldBalance,
+                                    afterBalance: referrer.balance,
+                                    transaction: rebateTransaction._id,
+                                    remark: `来自用户 ${user.username} 的还款返利`
+                                });
+                                await balanceLog.save();
+                                console.log('返利余额变动记录已创建');
+                            } else {
+                                console.log(`返利金额 ${calculatedRebateAmount} 低于最低返利金额 ${minRebateAmount}，跳过返利发放`);
+                            }
+                        } else {
+                            console.log('未找到返利设置，跳过返利发放');
+                        }
                     }
                 }
             }
