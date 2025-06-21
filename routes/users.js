@@ -43,7 +43,7 @@ const userController = {
     getUserDetail: async (req, res) => {
         try {
             const user = await User.findById(req.params.id)
-                                .select('username numericId email phone balance createdAt inviteCode referrer lastLoginAt updatedAt hasPayPassword payPasswordLockUntil')
+                                .select('username email phone balance createdAt inviteCode referrer lastLoginAt updatedAt hasPayPassword payPasswordLockUntil')
                                 .populate('referrer', 'username');
             if (!user) {
                 return res.status(404).json({
