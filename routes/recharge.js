@@ -156,11 +156,23 @@ router.post('/', protect, upload.single('proof'), async (req, res) => {
         }
 
         console.log('准备创建交易对象...');
+        
+        // 映射充值路径类型到Transaction允许的paymentMethod
+        const getPaymentMethod = (rechargePathType) => {
+            const typeMapping = {
+                'alipay': 'alipay',
+                'wechat': 'wechatpay',
+                'bank': 'bank',
+                'other': 'manual' // 将'other'映射为'manual'
+            };
+            return typeMapping[rechargePathType] || 'manual';
+        };
+        
         const transactionData = {
             user: new mongoose.Types.ObjectId(req.user._id),
             type: 'recharge',
             amount: parseFloat(amount),
-            paymentMethod: rechargePath.type || 'online',
+            paymentMethod: getPaymentMethod(rechargePath.type),
             paymentAccount: rechargePath.account || 'default',
             receiveAccount: rechargePath.receiver || 'system',
             proof: proofUrl, // 使用Cloudinary URL
