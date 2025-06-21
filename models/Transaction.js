@@ -82,6 +82,11 @@ const transactionSchema = new mongoose.Schema({
     balanceAfter: {
         type: Number,
         required: true
+    },
+    // 关联的信息ID，用于购买/还款等场景
+    infoId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Info'
     }
 });
 
