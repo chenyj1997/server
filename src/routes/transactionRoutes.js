@@ -496,26 +496,27 @@ router.get('/recharge-paths', protect, async (req, res) => {
     }
 });
 
-// 统计所有待审核充值和提现的总数，并统计客服未读消息数
+// 获取待审核交易数量和客服未读消息数量
 router.get('/pending/count', [protect, restrictToAdmin], async (req, res) => {
-  try {
-    const Transaction = require('../../models/Transaction');
-    const CustomerServiceMessage = require('../../models/CustomerServiceMessage');
-    // 只统计 type 为 recharge 或 withdraw 且 status 为 pending 的交易
-    const count = await Transaction.countDocuments({
-      type: { $in: ['recharge', 'withdraw'] },
-      status: 'pending'
-    });
-    // 统计客服未读消息（用户发给客服，未读且未隐藏）
-    const unreadCSCount = await CustomerServiceMessage.countDocuments({
-      isRead: false,
-      isHidden: false,
-      senderType: 'user'
-    });
-    res.json({ success: true, count, unreadCSCount });
-  } catch (error) {
-    res.status(500).json({ success: false, message: '统计待审核交易/客服消息数量失败', error: error.message });
-  }
+    try {
+        // 获取待审核的交易数量
+        const pendingCount = await Transaction.countDocuments({ status: 'pending' });
+        
+        // 获取客服未读消息数量
+        const unreadCSCount = await CustomerServiceMessage.countDocuments({
+            senderType: 'user',
+            isRead: false
+        });
+
+        res.json({
+            success: true,
+            count: pendingCount,
+            unreadCSCount: unreadCSCount
+        });
+    } catch (error) {
+        console.error('获取待审核数量错误:', error);
+        res.status(500).json({ success: false, message: '获取待审核数量失败', error: error.message });
+    }
 });
 
 module.exports = router; // 导出路由模块
