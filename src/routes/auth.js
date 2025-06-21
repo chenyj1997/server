@@ -38,7 +38,7 @@ router.post('/login', async (req, res) => {
         // 添加日志：打印接收到的用户名和密码
         console.log('收到登录请求，用户名:', username, '密码:', password);
 
-        // 查询时直接lean返回全部字段，避免select遗漏numericId
+        // 查询时直接lean返回全部字段，避免select遗漏inviteCode
         const user = await User.findOne({ username }).lean();
         
         // 添加日志：打印用户查找结果
@@ -62,7 +62,7 @@ router.post('/login', async (req, res) => {
         // 返回前打印user对象内容，便于调试
         console.log('user对象内容:', user);
 
-        // 返回完整user信息，并在numericId缺失时给出提示
+        // 返回完整user信息
         res.json({
             success: true,
             token,
@@ -72,8 +72,7 @@ router.post('/login', async (req, res) => {
                 role: user.role || (user.roles && user.roles[0]) || '',
                 email: user.email,
                 phone: user.phone,
-                numericId: user.numericId || '',
-                numericIdTip: user.numericId ? undefined : '警告：该用户未分配numericId，请检查数据库或补齐脚本！'
+                inviteCode: user.inviteCode || ''
             }
         });
     } catch (err) {
