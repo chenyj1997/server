@@ -418,7 +418,18 @@ const createInfoManager = () => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
-        const previewContainer = document.getElementById('image-preview');
+        // 根据输入框ID确定预览容器
+        const inputId = event.target.id;
+        let previewContainer;
+        if (inputId === 'cover-image') {
+            previewContainer = document.getElementById('cover-preview');
+        } else if (inputId === 'additional-images') {
+            previewContainer = document.getElementById('additional-images-preview');
+        } else {
+            // 如果没有找到对应的预览容器，使用通用的image-preview
+            previewContainer = document.getElementById('image-preview');
+        }
+        
         if (!previewContainer) {
             console.error('找不到图片预览容器');
             return;
@@ -500,9 +511,21 @@ const createInfoManager = () => {
     function deleteImageFromModal(buttonElement, imageUrl) {
         console.log('删除模态框图片:', imageUrl);
         const imageUrlsInput = document.getElementById('info-image-urls');
-        const imagePreview = document.getElementById('image-preview');
+        
+        // 查找图片所在的预览容器
+        const previewItem = buttonElement.closest('.image-preview-item');
+        if (!previewItem) {
+            console.error('找不到图片预览项');
+            return;
+        }
+        
+        const previewContainer = previewItem.parentElement;
+        if (!previewContainer) {
+            console.error('找不到预览容器');
+            return;
+        }
 
-        if (imageUrlsInput && imagePreview) {
+        if (imageUrlsInput) {
             let currentUrls = imageUrlsInput.value ? JSON.parse(imageUrlsInput.value) : [];
             // 查找并移除对应的URL
             const index = currentUrls.indexOf(imageUrl);
@@ -511,10 +534,7 @@ const createInfoManager = () => {
                 imageUrlsInput.value = JSON.stringify(currentUrls);
 
                 // 移除DOM元素
-                const previewItem = buttonElement.closest('.image-preview-item');
-                if (previewItem) {
-                    previewItem.remove();
-                }
+                previewItem.remove();
             }
         }
     }
@@ -541,9 +561,17 @@ const createInfoManager = () => {
         const now = new Date();
         const expiryTime = new Date(now.getTime() + parseInt(periodValue) * 24 * 60 * 60 * 1000).toISOString();
         
-        // 获取图片信息
-        const coverImage = document.getElementById('cover-image').files[0];
-        const additionalImages = document.getElementById('additional-images').files;
+        // 获取已经上传的图片URL（从隐藏字段）
+        const imageUrlsInput = document.getElementById('info-image-urls');
+        let imageUrls = [];
+        if (imageUrlsInput && imageUrlsInput.value) {
+            try {
+                imageUrls = JSON.parse(imageUrlsInput.value);
+            } catch (error) {
+                console.error('解析图片URL失败:', error);
+                imageUrls = [];
+            }
+        }
 
         try {
             window.ui.showLoading('保存中...');
@@ -567,36 +595,10 @@ const createInfoManager = () => {
                 period: periodValue ? parseInt(periodValue) : 0, // 这里赋值给 period 字段
                 expiryTime: expiryTime, // 自动计算的过期时间
                 status: 'published', // 状态直接设置为 published
-                imageUrls: [] // 初始化图片URL数组
+                imageUrls: imageUrls // 使用已经上传的图片URL
             };
 
-            // 处理图片上传
-            if (coverImage) {
-                try {
-                    const coverImageUrl = await uploadImage(coverImage);
-                    infoData.imageUrls.push(coverImageUrl); // 添加到imageUrls数组
-                    console.log('封面图片上传成功:', coverImageUrl);
-                } catch (error) {
-                    console.error('封面图片上传失败:', error);
-                    window.ui.showError('封面图片上传失败: ' + error.message);
-                    return;
-                }
-            }
-
-            if (additionalImages && additionalImages.length > 0) {
-                try {
-                    for (let i = 0; i < additionalImages.length; i++) {
-                        const imageUrl = await uploadImage(additionalImages[i]);
-                        infoData.imageUrls.push(imageUrl); // 添加到imageUrls数组
-                        console.log(`附加图片 ${i + 1} 上传成功:`, imageUrl);
-                    }
-                } catch (error) {
-                    console.error('附加图片上传失败:', error);
-                    window.ui.showError('附加图片上传失败: ' + error.message);
-                    return;
-                }
-            }
-
+            console.log('准备保存的信息数据:', infoData);
 
             let response;
             if (infoId) {
@@ -1416,14 +1418,25 @@ const createInfoManager = () => {
         }
 
         // 图片上传事件
-        const imageUpload = document.getElementById('image-upload');
-        if (imageUpload) {
+        const coverImageInput = document.getElementById('cover-image');
+        const additionalImagesInput = document.getElementById('additional-images');
+        
+        if (coverImageInput) {
             // 移除旧的事件监听器，避免重复绑定
-            const oldChangeListener = imageUpload.onchange;
+            const oldChangeListener = coverImageInput.onchange;
              if (oldChangeListener) {
-                 imageUpload.onchange = null; // 或者使用 removeEventListener
+                 coverImageInput.onchange = null; // 或者使用 removeEventListener
              }
-            imageUpload.onchange = handleImageUpload; // 这里可以直接调用，因为在这个作用域内函数已定义
+            coverImageInput.onchange = handleImageUpload; // 这里可以直接调用，因为在这个作用域内函数已定义
+        }
+        
+        if (additionalImagesInput) {
+            // 移除旧的事件监听器，避免重复绑定
+            const oldChangeListener = additionalImagesInput.onchange;
+             if (oldChangeListener) {
+                 additionalImagesInput.onchange = null; // 或者使用 removeEventListener
+             }
+            additionalImagesInput.onchange = handleImageUpload; // 这里可以直接调用，因为在这个作用域内函数已定义
         }
 
         // 分页点击事件
