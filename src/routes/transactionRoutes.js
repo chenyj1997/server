@@ -207,10 +207,13 @@ router.post('/:id/review', [protect, restrictToAdmin], async (req, res) => {
                 user.frozen = Math.max(0, (user.frozen || 0) - Number(transaction.amount));
                 console.log(`用户提现: 余额从 ${oldBalance} 减少到 ${newBalance}, 解冻金额: ${transaction.amount}`);
             } else if (transaction.type === 'repayment') {
-                // 还款时处理返利
-                const newBalance = Number(oldBalance) + Number(transaction.amount);
-                user.balance = newBalance;
-                console.log(`用户还款: 余额从 ${oldBalance} 增加到 ${newBalance}`);
+                // 还款时处理返利 - 注意：这里不应该增加用户余额，因为还款时已经处理过了
+                // const newBalance = Number(oldBalance) + Number(transaction.amount);
+                // user.balance = newBalance;
+                // console.log(`用户还款: 余额从 ${oldBalance} 增加到 ${newBalance}`);
+
+                // 只处理返利，不重复增加用户余额
+                console.log(`处理还款返利，用户余额保持不变: ${oldBalance}`);
 
                 // 计算并发放返利
                 if (user.referrer) {
@@ -223,8 +226,23 @@ router.post('/:id/review', [protect, restrictToAdmin], async (req, res) => {
                         if (rebateSettings) {
                             const { inviteRebatePercentage, minRebateAmount } = rebateSettings.value;
                             
-                            // 计算返利金额
-                            const calculatedRebateAmount = (Number(transaction.amount) * inviteRebatePercentage / 100);
+                            // 计算返利金额 - 需要获取原始购买信息中的loanAmount
+                            // 注意：这里需要根据实际情况获取loanAmount，可能需要从关联的信息中获取
+                            let loanAmount = 0;
+                            if (transaction.infoId) {
+                                const Info = mongoose.model('Info');
+                                const info = await Info.findById(transaction.infoId);
+                                if (info) {
+                                    loanAmount = Number(info.loanAmount) || 0;
+                                }
+                            }
+                            
+                            // 如果无法获取loanAmount，则使用transaction.amount作为备选
+                            if (loanAmount === 0) {
+                                loanAmount = Number(transaction.amount);
+                            }
+                            
+                            const calculatedRebateAmount = (loanAmount * inviteRebatePercentage / 100);
                             
                             // 检查是否达到最低返利金额
                             if (calculatedRebateAmount >= minRebateAmount) {
