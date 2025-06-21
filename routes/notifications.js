@@ -78,6 +78,37 @@ router.delete('/:id', protect, async (req, res) => {
     }
 });
 
+// @desc    Create a test system notification
+// @route   POST /api/notifications/test
+// @access  Private
+router.post('/test', protect, async (req, res) => {
+    try {
+        console.log('创建测试公告');
+        const testNotification = new Notification({
+            title: '测试公告',
+            content: '这是一个测试公告的内容。\n请检查显示效果！',
+            type: 'SYSTEM',
+            status: 'ACTIVE',
+            createdBy: req.user._id
+        });
+
+        await testNotification.save();
+        console.log('测试公告创建成功:', testNotification);
+
+        res.status(201).json({
+            success: true,
+            message: '测试公告创建成功',
+            data: testNotification
+        });
+    } catch (error) {
+        console.error('创建测试公告失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '创建测试公告失败'
+        });
+    }
+});
+
 // @desc    获取未读通知数量
 // @route   GET /api/notifications/unread/count
 // @access  Private
@@ -136,6 +167,22 @@ router.post('/', protect, async (req, res) => {
     } catch (error) {
         console.error('公告发布失败:', error);
         res.status(500).json({ success: false, message: '公告发布失败', error: error.message });
+    }
+});
+
+// 获取通知列表（支持 type/status/limit/sortBy/sortOrder 查询参数）
+router.get('/list', protect, async (req, res) => {
+    try {
+        const { type, status, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+        const query = { user: req.user._id };
+        if (type) query.type = type;
+        if (status) query.status = status;
+        const notifications = await Notification.find(query)
+            .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
+            .limit(parseInt(limit));
+        res.json({ success: true, data: notifications });
+    } catch (error) {
+        res.status(500).json({ success: false, message: '获取通知列表失败' });
     }
 });
 
