@@ -1,13 +1,11 @@
 // server/public/js/admin/recharge-paths.js
 
-import { showSuccess, showError, showLoading, hideLoading } from '../utils/ui.js'; // 引入 UI 工具函数
-
-// TODO: 实现获取、添加、编辑、删除充值路径的函数以及模态框表单处理逻辑
-
 // 获取充值路径列表
-export async function getRechargePaths() {
+async function getRechargePaths() {
     try {
-        showLoading('加载充值路径中...');
+        if (window.ui && window.ui.showLoading) {
+            window.ui.showLoading('加载充值路径中...');
+        }
         const token = localStorage.getItem('token');
         if (!token) {
             throw new Error('用户未登录');
@@ -20,7 +18,9 @@ export async function getRechargePaths() {
         });
 
         const data = await response.json();
-        hideLoading();
+        if (window.ui && window.ui.hideLoading) {
+            window.ui.hideLoading();
+        }
 
         if (!response.ok) {
             throw new Error(data.message || '获取充值路径列表失败');
@@ -29,15 +29,19 @@ export async function getRechargePaths() {
         console.log('前端：获取充值路径列表成功:', data.data);
         return data.data;
     } catch (error) {
-        hideLoading();
+        if (window.ui && window.ui.hideLoading) {
+            window.ui.hideLoading();
+        }
         console.error('前端：调用获取充值路径列表 API 失败:', error);
-        showError('获取充值路径列表失败: ' + error.message);
+        if (window.ui && window.ui.showError) {
+            window.ui.showError('获取充值路径列表失败: ' + error.message);
+        }
         throw error;
     }
 }
 
 // 渲染充值路径列表
-export function renderRechargePathsList(paths) {
+function renderRechargePathsList(paths) {
     console.log('开始渲染充值路径列表...');
     console.log('传入的路径数据:', paths);
     
@@ -123,7 +127,9 @@ async function handleDeletePath(event) {
             });
 
             if (response.ok) {
-                showSuccess('充值路径删除成功');
+                if (window.ui && window.ui.showSuccess) {
+                    window.ui.showSuccess('充值路径删除成功');
+                }
                 // 重新加载列表
                 const paths = await getRechargePaths();
                 renderRechargePathsList(paths);
@@ -133,13 +139,15 @@ async function handleDeletePath(event) {
             }
         } catch (error) {
             console.error('删除充值路径失败:', error);
-            showError('删除充值路径失败: ' + error.message);
+            if (window.ui && window.ui.showError) {
+                window.ui.showError('删除充值路径失败: ' + error.message);
+            }
         }
     }
 }
 
 // 创建新的充值路径
-export async function createRechargePath(formData) {
+async function createRechargePath(formData) {
     try {
         console.log('🚀 createRechargePath 函数被调用');
         console.log('📋 FormData 内容:');
@@ -151,7 +159,9 @@ export async function createRechargePath(formData) {
             }
         }
 
-        showLoading('保存充值路径中...');
+        if (window.ui && window.ui.showLoading) {
+            window.ui.showLoading('保存充值路径中...');
+        }
         const token = localStorage.getItem('token'); // 获取认证token
         if (!token) {
             throw new Error('用户未登录');
@@ -223,8 +233,12 @@ export async function createRechargePath(formData) {
             throw new Error('无法读取服务器响应');
         }
 
-        hideLoading();
-        showSuccess('充值路径保存成功');
+        if (window.ui && window.ui.hideLoading) {
+            window.ui.hideLoading();
+        }
+        if (window.ui && window.ui.showSuccess) {
+            window.ui.showSuccess('充值路径保存成功');
+        }
         console.log('🎉 保存成功，返回数据:', data);
         return data; // 返回后端响应数据
 
@@ -235,15 +249,19 @@ export async function createRechargePath(formData) {
         console.error('错误堆栈:', error.stack);
         console.error('完整错误对象:', error);
         
-        hideLoading();
+        if (window.ui && window.ui.hideLoading) {
+            window.ui.hideLoading();
+        }
         console.error('前端：调用创建充值路径 API 失败:', error); // 添加错误日志
-        showError('保存充值路径失败: ' + error.message);
+        if (window.ui && window.ui.showError) {
+            window.ui.showError('保存充值路径失败: ' + error.message);
+        }
         throw error; // 抛出错误以便上层调用者处理
     }
 }
 
 // 重置充值路径表单
-export function resetRechargePathForm() {
+function resetRechargePathForm() {
     console.log('重置充值路径表单...');
     const form = document.getElementById('recharge-path-form');
     if (form) {
@@ -269,7 +287,7 @@ export function resetRechargePathForm() {
 }
 
 // 创建充值路径模态框
-export function createRechargePathModal() {
+function createRechargePathModal() {
     console.log('创建充值路径模态框...');
     const modalElement = document.getElementById('recharge-path-modal');
     if (!modalElement) {
@@ -290,14 +308,14 @@ export function createRechargePathModal() {
 
 // 页面初始化函数
 function initRechargePathsPage() {
-    console.log('初始化充值路径管理页面...');
+    console.log('🚀 初始化充值路径管理页面...');
 
     // --- 绑定弹出充值路径列表模态框的按钮事件 ---
     const openRechargePathsListBtn = document.getElementById('btn-add-recharge-path'); // 原有的添加按钮现在用于弹出列表模态框
     const rechargePathsListModalElement = document.getElementById('recharge-paths-list-modal'); // 列表模态框元素
 
     if (openRechargePathsListBtn && rechargePathsListModalElement) {
-        console.log('找到弹出充值路径列表按钮和列表模态框，绑定点击事件...');
+        console.log('✅ 找到弹出充值路径列表按钮和列表模态框，绑定点击事件...');
         // 确保移除之前可能绑定的事件，避免重复
         openRechargePathsListBtn.removeEventListener('click', handleOpenRechargePathsListModal);
         openRechargePathsListBtn.addEventListener('click', handleOpenRechargePathsListModal);
@@ -311,7 +329,7 @@ function initRechargePathsPage() {
     const rechargePathsListModalElementById = document.getElementById('recharge-paths-list-modal'); // 再次获取列表模态框元素以便关闭
 
     if (addNewRechargePathBtnInListModal && rechargePathModalElement && rechargePathsListModalElementById) {
-         console.log('找到列表模态框中添加按钮和相关模态框元素，绑定点击事件...');
+         console.log('✅ 找到列表模态框中添加按钮和相关模态框元素，绑定点击事件...');
         // 确保移除之前可能绑定的事件，避免重复
          addNewRechargePathBtnInListModal.removeEventListener('click', handleAddNewRechargePathFromList);
          addNewRechargePathBtnInListModal.addEventListener('click', handleAddNewRechargePathFromList);
@@ -325,7 +343,7 @@ function initRechargePathsPage() {
     // 注意：rechargePathModalElement 已经在上面获取，这里不需要再次获取
 
     if (saveRechargePathBtn && rechargePathForm && rechargePathModalElement) {
-        console.log('找到保存充值路径按钮和表单，绑定点击事件...');
+        console.log('✅ 找到保存充值路径按钮和表单，绑定点击事件...');
         // 确保移除之前可能绑定的事件，避免重复
         saveRechargePathBtn.removeEventListener('click', handleSaveRechargePath);
         saveRechargePathBtn.addEventListener('click', handleSaveRechargePath);
@@ -335,7 +353,7 @@ function initRechargePathsPage() {
 
     // TODO: 为列表中的编辑和删除按钮绑定事件 (使用事件委托)
 
-    console.log('充值路径管理页面初始化完成');
+    console.log('🎉 充值路径管理页面初始化完成');
 
      // 页面加载时是否需要显示列表在页面上还是只在模态框中显示？
      // 如果需要在页面上显示列表，在这里调用 getRechargePaths 并渲染到 #recharge-paths-list
@@ -345,7 +363,7 @@ function initRechargePathsPage() {
 
 // 处理弹出充值路径列表模态框的逻辑
 async function handleOpenRechargePathsListModal() {
-    console.log('弹出充值路径列表按钮被点击，显示列表模态框并加载列表...');
+    console.log('🔘 弹出充值路径列表按钮被点击，显示列表模态框并加载列表...');
     const rechargePathsListModalElement = document.getElementById('recharge-paths-list-modal'); // 列表模态框元素
     if (!rechargePathsListModalElement) return;
 
@@ -426,6 +444,17 @@ async function handleSaveRechargePath() {
 
 // 在 DOM 加载完成后初始化页面
 document.addEventListener('DOMContentLoaded', initRechargePathsPage);
+
+// 导出到全局对象，以便其他脚本可以访问
+window.rechargePathManager = {
+    getRechargePaths,
+    renderRechargePathsList,
+    createRechargePath,
+    resetRechargePathForm,
+    createRechargePathModal,
+    handleEditPath,
+    handleDeletePath
+};
 
 // TODO: 实现加载充值路径列表到页面上（如果需要）
 // TODO: 实现编辑和删除充值路径的功能（包括前端和后端）
