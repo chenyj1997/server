@@ -1103,8 +1103,8 @@ router.post('/:id/purchase', protect, async (req, res) => {
       console.warn('[购买接口] 信息已被购买:', infoId);
       return res.status(400).json({ success: false, message: '该信息已被购买' });
     }
-    // 校验用户余额
-    const user = await User.findById(userId);
+    // 校验用户余额和支付密码
+    const user = await User.findById(userId).select('+payPassword +hasPayPassword');
     console.log('[购买接口] 查询到的用户:', user);
     const price = Number(info.loanAmount) || 0; // 只用 loanAmount
     console.log('[购买接口] 价格:', price, '用户余额:', user.balance);
@@ -1112,11 +1112,19 @@ router.post('/:id/purchase', protect, async (req, res) => {
       console.warn('[购买接口] 余额不足:', user.balance, '<', price);
       return res.status(400).json({ success: false, message: '余额不足' });
     }
-    // 校验支付密码（如有）
-    if (user.payPassword && paymentPassword !== user.payPassword) {
-      console.warn('[购买接口] 支付密码错误:', paymentPassword, '!=', user.payPassword);
+    
+    // 使用备份文件中的安全验证逻辑
+    const realPayPassword = user.payPassword;
+    if (!realPayPassword) {
+      console.warn('[购买接口] 用户未设置支付密码');
+      return res.status(400).json({ success: false, message: '请先设置支付密码' });
+    }
+    const isMatch = await bcrypt.compare(paymentPassword, realPayPassword);
+    if (!isMatch) {
+      console.warn('[购买接口] 支付密码错误');
       return res.status(400).json({ success: false, message: '支付密码错误' });
     }
+    
     // 记录购买
     info.purchasers.push(userId);
     info.purchaseTime = new Date();
