@@ -3,24 +3,43 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const RechargePath = require('../models/RechargePath');
 const { protect } = require('../middleware/auth');
 const mongoose = require('mongoose');
+const cloudinary = require('../utils/cloudinary');
 
-// 配置文件上传
+// 配置临时文件上传（用于Cloudinary）
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, path.join(__dirname, '../public/uploads/proofs'));
+        const tempDir = path.join(__dirname, '../temp_uploads');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        cb(null, tempDir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'upload_' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, 'temp_' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('只允许上传JPEG/PNG/GIF/WEBP图片!'), false);
+        }
+    }
+});
 
 // 获取充值路径列表
 router.get('/paths', async (req, res) => {
@@ -51,7 +70,7 @@ router.post('/', protect, upload.single('proof'), async (req, res) => {
         
         const { amount, pathId } = req.body;
         
-        
+        // 验证必填字段
         if (!amount || isNaN(parseFloat(amount))) {
             console.log('金额验证失败');
             return res.status(400).json({
@@ -68,6 +87,25 @@ router.post('/', protect, upload.single('proof'), async (req, res) => {
             });
         }
         
+        // 验证充值交易截图（必填）
+        if (!req.file) {
+            console.log('充值交易截图验证失败');
+            return res.status(400).json({
+                success: false,
+                message: '请上传充值交易截图，此项目为必填项'
+            });
+        }
+        
+        // 验证文件类型
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(req.file.mimetype)) {
+            console.log('文件类型验证失败:', req.file.mimetype);
+            return res.status(400).json({
+                success: false,
+                message: '请上传支持的图片格式：JPG、PNG、GIF、WEBP'
+            });
+        }
+        
         // 验证充值路径是否存在
         const rechargePath = await RechargePath.findById(pathId);
         console.log('查询到的充值路径:', rechargePath ? JSON.stringify(rechargePath, null, 2) : '未找到');
@@ -79,11 +117,33 @@ router.post('/', protect, upload.single('proof'), async (req, res) => {
             });
         }
         
-        // 提取上传的凭证文件路径
-        let proofPath = null;
-        if (req.file) {
-            proofPath = `/uploads/proofs/${req.file.filename}`;
-            console.log('充值凭证路径:', proofPath);
+        // 上传图片到Cloudinary
+        let proofUrl = null;
+        try {
+            console.log('开始上传图片到Cloudinary...');
+            const cloudinaryResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'recharge-proofs',
+                public_id: `recharge_${Date.now()}_${Math.round(Math.random() * 1E9)}`,
+                resource_type: 'image'
+            });
+            
+            proofUrl = cloudinaryResult.secure_url;
+            console.log('Cloudinary上传成功:', proofUrl);
+            
+            // 删除临时文件
+            fs.unlinkSync(req.file.path);
+            console.log('临时文件已删除');
+            
+        } catch (uploadError) {
+            console.error('Cloudinary上传失败:', uploadError);
+            // 删除临时文件
+            if (fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            return res.status(500).json({
+                success: false,
+                message: '图片上传失败，请重试'
+            });
         }
 
         // 获取用户当前余额
@@ -103,7 +163,7 @@ router.post('/', protect, upload.single('proof'), async (req, res) => {
             paymentMethod: rechargePath.type || 'online',
             paymentAccount: rechargePath.account || 'default',
             receiveAccount: rechargePath.receiver || 'system',
-            proof: proofPath,
+            proof: proofUrl, // 使用Cloudinary URL
             status: 'pending',
             rechargePath: pathId,
             balanceBefore: user.balance, // 变更前余额
@@ -120,7 +180,7 @@ router.post('/', protect, upload.single('proof'), async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: '充值申请已提交',
+            message: '充值申请已提交，请等待审核',
             data: {
                 transactionId: transaction._id,
                 amount: transaction.amount,
@@ -133,6 +193,22 @@ router.post('/', protect, upload.single('proof'), async (req, res) => {
         console.error('=== 充值请求处理失败 ===');
         console.error('错误详情:', error);
         console.error('错误堆栈:', error.stack);
+        
+        // 处理文件上传相关错误
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+                success: false,
+                message: '文件大小超过限制，请上传5MB以内的图片'
+            });
+        }
+        
+        if (error.message && error.message.includes('只允许上传')) {
+            return res.status(400).json({
+                success: false,
+                message: '请上传支持的图片格式：JPG、PNG、GIF、WEBP'
+            });
+        }
+        
         res.status(500).json({
             success: false,
             message: '创建充值交易失败: ' + error.message
