@@ -528,9 +528,9 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
 router.get('/transactions', async (req, res) => {
     try {
         const userId = req.user.id;
-        // 使用 .populate('relatedInfo', 'title') 来关联查询信息的标题
+        // 使用 .populate('infoId', '_id') 来关联查询信息的ID
         const allTransactions = await Transaction.find({ user: userId })
-            .populate('relatedInfo', '_id') // 只需要关联的_id
+            .populate('infoId', '_id') // 使用正确的字段名 'infoId'
             .sort({ createdAt: -1 })
             .lean();
 
