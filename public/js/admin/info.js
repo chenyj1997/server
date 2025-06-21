@@ -422,14 +422,22 @@ const createInfoManager = () => {
         const inputId = event.target.id;
         let previewContainer;
 
-        // 获取当前表单中的隐藏字段
+        // 确保隐藏字段存在
         let imageUrlsInput = document.getElementById('info-image-urls');
         if (!imageUrlsInput) {
-            imageUrlsInput = document.createElement('input');
-            imageUrlsInput.type = 'hidden';
-            imageUrlsInput.id = 'info-image-urls';
-            imageUrlsInput.name = 'imageUrls';
-            document.getElementById('info-form').appendChild(imageUrlsInput);
+            // 如果隐藏字段不存在，创建它
+            const newImageUrlsInput = document.createElement('input');
+            newImageUrlsInput.type = 'hidden';
+            newImageUrlsInput.id = 'info-image-urls';
+            newImageUrlsInput.name = 'imageUrls';
+            newImageUrlsInput.value = '[]';
+            const infoForm = document.getElementById('info-form');
+            if (infoForm) {
+                infoForm.appendChild(newImageUrlsInput);
+            } else {
+                console.error('找不到info-form，无法创建隐藏字段');
+                return;
+            }
         }
         let currentUrls = imageUrlsInput.value ? JSON.parse(imageUrlsInput.value) : [];
 
@@ -587,9 +595,15 @@ const createInfoManager = () => {
         if (imageUrlsInput && imageUrlsInput.value) {
             try {
                 imageUrls = JSON.parse(imageUrlsInput.value);
+                console.log('从隐藏字段获取到的图片URLs:', imageUrls);
             } catch (error) {
                 console.error('解析图片URL失败:', error);
                 imageUrls = [];
+            }
+        } else {
+            console.warn('隐藏字段不存在或为空，imageUrlsInput:', imageUrlsInput);
+            if (imageUrlsInput) {
+                console.log('隐藏字段的值:', imageUrlsInput.value);
             }
         }
 
@@ -854,11 +868,32 @@ const createInfoManager = () => {
                             
                             // 更新隐藏的URL输入框
                             const imageUrlsInput = document.getElementById('info-image-urls');
-                            if (imageUrlsInput) {
-                                let currentUrls = imageUrlsInput.value ? JSON.parse(imageUrlsInput.value) : [];
+                            if (!imageUrlsInput) {
+                                // 如果隐藏字段不存在，创建它
+                                const newImageUrlsInput = document.createElement('input');
+                                newImageUrlsInput.type = 'hidden';
+                                newImageUrlsInput.id = 'info-image-urls';
+                                newImageUrlsInput.name = 'imageUrls';
+                                newImageUrlsInput.value = '[]';
+                                const infoForm = document.getElementById('info-form');
+                                if (infoForm) {
+                                    infoForm.appendChild(newImageUrlsInput);
+                                } else {
+                                    console.error('找不到info-form，无法创建隐藏字段');
+                                    return;
+                                }
+                            }
+                            
+                            // 现在确保隐藏字段存在
+                            const finalImageUrlsInput = document.getElementById('info-image-urls');
+                            if (finalImageUrlsInput) {
+                                let currentUrls = finalImageUrlsInput.value ? JSON.parse(finalImageUrlsInput.value) : [];
                                 // 合并新旧URL，并去重
                                 const finalUrls = [...new Set([...currentUrls, ...uploadedUrls.cover, ...uploadedUrls.additional])];
-                                imageUrlsInput.value = JSON.stringify(finalUrls);
+                                finalImageUrlsInput.value = JSON.stringify(finalUrls);
+                                console.log('更新隐藏字段成功，当前URLs:', finalUrls);
+                            } else {
+                                console.error('隐藏字段创建失败');
                             }
 
                             window.ui.hideLoading();
