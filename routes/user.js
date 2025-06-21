@@ -336,7 +336,7 @@ router.get('/:id', protect, async (req, res) => {
         }
 
         let user = await User.findById(userId)
-            .select('-password -payPassword hasPayPassword payPasswordLockUntil')
+            .select('-password -payPassword -payPasswordLockUntil')
             .populate('referrer', 'username inviteCode');
 
         if (!user) {
