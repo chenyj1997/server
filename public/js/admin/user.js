@@ -255,7 +255,7 @@ export function renderUserList(userList) {
     tbody.innerHTML = userList.map(user => {
         const statusClass = user.status === 'active' ? 'text-success' : 'text-danger';
         const statusText = user.status === 'active' ? '正常' : '禁用';
-        const displayId = user.numericId || (user._id ? user._id.substring(0, 8) : '未知ID');
+        const displayId = user.inviteCode || (user._id ? user._id.substring(0, 8) : '未知ID');
         
         return `
         <tr data-user-id="${user._id}">
@@ -325,7 +325,7 @@ function showUserDetails(user) {
                     <div class="modal-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <p><strong>用户ID：</strong> ${user.numericId || (user._id ? user._id.substring(0, 8) : '未知ID')}</p>
+                                <p><strong>用户ID：</strong> ${user.inviteCode || (user._id ? user._id.substring(0, 8) : '未知ID')}</p>
                                 <p><strong>用户名：</strong> ${escapeHtml(user.username)}</p>
                                 <p><strong>角色：</strong> ${getRoleNames(user.role)}</p>
                                 <p><strong>余额：</strong> ¥${user.balance || 0}</p>
