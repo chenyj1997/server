@@ -491,6 +491,13 @@ const createInfoManager = () => {
                 // 上传图片
                 const imageUrl = await uploadImage(file);
 
+                // 检查重复URL
+                if (currentUrls.includes(imageUrl)) {
+                    window.ui.showWarning(`图片 ${file.name} 已存在，跳过重复上传。`);
+                    previewWrapper.remove(); // 移除上传占位符
+                    continue; // 跳过此文件
+                }
+
                 // 移除上传中的提示，显示图片和删除按钮
                 previewWrapper.innerHTML = `
                     <img src="${imageUrl}" alt="预览图片" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
@@ -1483,24 +1490,6 @@ const createInfoManager = () => {
         const coverImageInput = document.getElementById('cover-image');
         const additionalImagesInput = document.getElementById('additional-images');
         
-        if (coverImageInput) {
-            // 移除旧的事件监听器，避免重复绑定
-            const oldChangeListener = coverImageInput.onchange;
-             if (oldChangeListener) {
-                 coverImageInput.onchange = null; // 或者使用 removeEventListener
-             }
-            coverImageInput.onchange = handleImageUpload; // 这里可以直接调用，因为在这个作用域内函数已定义
-        }
-        
-        if (additionalImagesInput) {
-            // 移除旧的事件监听器，避免重复绑定
-            const oldChangeListener = additionalImagesInput.onchange;
-             if (oldChangeListener) {
-                 additionalImagesInput.onchange = null; // 或者使用 removeEventListener
-             }
-            additionalImagesInput.onchange = handleImageUpload; // 这里可以直接调用，因为在这个作用域内函数已定义
-        }
-
         // 分页点击事件
         const paginationContainer = document.querySelector('#info-section .pagination');
         if (paginationContainer) {
