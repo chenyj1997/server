@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>永鑫资本管理控制台</title>
+    <title>永鑫资本系统 - 管理控制台</title>
     <link rel="stylesheet" href="/css/lib/bootstrap.min.css">
     <link href="/css/lib/bootstrap-icons.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -1333,9 +1333,9 @@
                     const notificationSection = document.getElementById('notification-section');
                     if (notificationSection) {
                         notificationSection.style.display = 'block';
-                        // 重新初始化通知管理器
-                        if (window.notificationManager && typeof window.notificationManager.init === 'function') {
-                            window.notificationManager.init();
+                        // 使用 initNotificationPage 而不是 init，避免重复初始化
+                        if (window.notificationManager && typeof window.notificationManager.initNotificationPage === 'function') {
+                            window.notificationManager.initNotificationPage();
                         }
                     }
                 });
