@@ -338,7 +338,7 @@ router.get('/:id', protect, async (req, res) => {
 
         const user = await User.findById(userId)
             .select('-password -payPassword hasPayPassword payPasswordLockUntil') // 显式选择支付密码状态相关字段
-            .populate('referrer', 'username numericId'); // 填充推荐人信息
+            .populate('referrer', 'username inviteCode'); // 填充推荐人信息
 
         if (!user) {
             return res.status(404).json({
