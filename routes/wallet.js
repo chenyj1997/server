@@ -15,6 +15,7 @@ const bcrypt = require('bcryptjs');
 const { protect: auth } = require('../middleware/auth');
 const RechargePath = require('../models/RechargePath');
 const Notification = require('../models/Notification');
+const Info = require('../models/Info');
 const cors = require('cors');
 const cloudinary = require('../utils/cloudinary');
 
