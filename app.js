@@ -295,7 +295,7 @@ app.use('/api/wallet', protect, walletRoutes);
 app.use('/api/recharge', rechargeRoutes);
 app.use('/api/notifications', protect, notificationRoutes);
 app.use('/api/admin', adminAuth, adminRoutes);
-app.use('/api/recharge-paths', rechargePathsRoutes);
+app.use('/api/recharge-paths', protect,rechargePathsRoutes);
 app.use('/api/transactions', protect, transactionRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/user', protect, userRouter);
