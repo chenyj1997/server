@@ -643,8 +643,8 @@ async function distributeSaleFundsAsync(infoId, buyerUserId, totalAmountPaid) {
             if (rebateSettings) {
                 const { inviteRebatePercentage, minRebateAmount } = rebateSettings.value;
                 
-                // 计算返利金额
-                const calculatedRebateAmount = (Number(totalAmountPaid) * inviteRebatePercentage / 100);
+                // 计算返利金额 - 使用loanAmount（购买价格）而不是repaymentAmount（还款金额）
+                const calculatedRebateAmount = (Number(info.loanAmount) * inviteRebatePercentage / 100);
                 
                 // 检查是否达到最低返利金额
                 if (calculatedRebateAmount >= minRebateAmount) {
@@ -662,9 +662,9 @@ async function distributeSaleFundsAsync(infoId, buyerUserId, totalAmountPaid) {
                                 amount: rebateAmount,
                                 status: 'approved',
                                 paymentMethod: 'INTERNAL_SETTLEMENT',
-                                paymentAccount: buyerUser ? buyerUser._id.toString() : null,
+                                paymentAccount: user ? user._id.toString() : null,
                                 receiveAccount: referrer._id.toString(),
-                                remark: `获得推荐返利，${buyerUser ? buyerUser.username : ''}还款`,
+                                remark: `获得推荐返利，${user ? user.username : ''}还款`,
                                 infoId: info._id,
                                 createdAt: new Date(),
                                 balanceBefore: referrerBalanceBefore,
@@ -682,8 +682,9 @@ async function distributeSaleFundsAsync(infoId, buyerUserId, totalAmountPaid) {
         let buyerBalanceAfter = 0;
         if (buyerUser) {
             buyerBalanceBefore = buyerUser.balance;
-            buyerUser.balance += buyerReceiveAmount;
-            await buyerUser.save();
+            // 注意：这里不应该增加买家余额，因为还款时已经处理过了
+            // buyerUser.balance += buyerReceiveAmount;
+            // await buyerUser.save();
             buyerBalanceAfter = buyerUser.balance;
         }
         const repayTransaction = {
@@ -706,8 +707,9 @@ async function distributeSaleFundsAsync(infoId, buyerUserId, totalAmountPaid) {
         if (buyerReceiveAmount > 0 && info.author) {
             const author = await User.findById(info.author);
             if (author) {
-                author.balance += buyerReceiveAmount;
-                await author.save();
+                // 注意：这里不应该增加发布者余额，因为还款时已经处理过了
+                // author.balance += buyerReceiveAmount;
+                // await author.save();
                 // 不再为卖家创建 SALE_PROCEEDS 记录
             }
         }
@@ -861,8 +863,8 @@ router.post('/:id/repay', protect, restrictToAdmin, async (req, res) => {
             if (rebateSettings) {
                 const { inviteRebatePercentage, minRebateAmount } = rebateSettings.value;
                 
-                // 计算返利金额
-                const calculatedRebateAmount = (Number(info.repaymentAmount) * inviteRebatePercentage / 100);
+                // 计算返利金额 - 使用loanAmount（购买价格）而不是repaymentAmount（还款金额）
+                const calculatedRebateAmount = (Number(info.loanAmount) * inviteRebatePercentage / 100);
                 
                 // 检查是否达到最低返利金额
                 if (calculatedRebateAmount >= minRebateAmount) {
