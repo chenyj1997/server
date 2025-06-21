@@ -75,7 +75,7 @@ function createUserManager() {
                 tr.dataset.userId = user._id;
                 const balance = (user.balance !== undefined && user.balance !== null && !isNaN(parseFloat(user.balance))) ? parseFloat(user.balance) : 0;
             tr.innerHTML = `
-                    <td>${user.numericId || user._id.slice(-6) || 'N/A'}</td>
+                    <td>${user.inviteCode || user._id.slice(-6) || 'N/A'}</td>
                 <td>${user.username || '未命名用户'}</td>
                     <td><span class="user-role-editable" data-user-id="${user._id}" data-user-role="${user.role || 'user'}" style="cursor: pointer; text-decoration: underline;">${user.role || 'user'}</span></td>
                     <td><a href="javascript:void(0)" class="balance-link" data-user-id="${user._id}" data-user-name="${user.username || '未知用户'}">¥${balance.toFixed(2)}</a></td>
@@ -296,7 +296,7 @@ function createUserManager() {
                     // DEBUG: Log invited user data being used for the link
 
                     row.innerHTML = `
-                        <td>${escHtml(invitedUser.numericId || invitedUser._id.slice(-6) || 'N/A')}</td>
+                        <td>${escHtml(invitedUser.inviteCode || invitedUser._id.slice(-6) || 'N/A')}</td>
                         <td><a href="#" class="view-invited-user-purchases" data-invited-user-id="${invitedUser._id}" data-invited-user-name="${escHtml(invitedUser.username)}">${escHtml(invitedUser.username)}</a></td>
                         <td>${fDate(invitedUser.createdAt)}</td>
                         <td><span class="${statusClass}">${statusText}</span></td>
@@ -424,7 +424,7 @@ function createUserManager() {
             const getRoleDisplayName = window.utils && window.utils.getRoleName ? window.utils.getRoleName : (r) => r;
 
             document.getElementById('detail-user-name').textContent = escHtml(user.username || '未知用户');
-            document.getElementById('detail-user-id').textContent = escHtml(user.numericId || user._id || 'N/A');
+            document.getElementById('detail-user-id').textContent = escHtml(user.inviteCode || user._id || 'N/A');
             
             const roleBadge = document.getElementById('detail-user-role');
             roleBadge.textContent = escHtml(getRoleDisplayName(user.role || 'user'));
