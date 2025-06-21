@@ -109,38 +109,6 @@ router.post('/test', protect, async (req, res) => {
     }
 });
 
-// @desc    Get all system notifications (公告)
-// @route   GET /api/notifications/list
-// @access  Private
-router.get('/list', protect, async (req, res) => {
-    try {
-        console.log('获取公告列表请求:', {
-            user: req.user._id,
-            role: req.user.role,
-            query: req.query
-        });
-
-        let query = {
-            status: 'ACTIVE', // 只查询已发布的公告
-            type: 'SYSTEM' // 只查询系统公告
-        };
-
-        // 如果指定了类型，添加到查询条件
-        if (req.query.type) {
-            query.type = req.query.type;
-        }
-
-        console.log('查询条件:', query);
-        const notifications = await Notification.find(query).sort({ createdAt: -1 });
-        console.log('查询结果:', notifications);
-
-        res.json({ success: true, data: notifications });
-    } catch (error) {
-        console.error('Error fetching system notifications:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch system notifications' });
-    }
-});
-
 // @desc    获取未读通知数量
 // @route   GET /api/notifications/unread/count
 // @access  Private
