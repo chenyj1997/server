@@ -45,17 +45,17 @@ function renderRechargePathsList(paths) {
     console.log('开始渲染充值路径列表...');
     console.log('传入的路径数据:', paths);
     
-    const listBody = document.getElementById('rechargePathsListBody');
-    console.log('找到的列表容器元素:', listBody);
+    const listContainer = document.getElementById('recharge-paths-ul');
+    console.log('找到的列表容器元素:', listContainer);
     
-    if (!listBody) {
-        console.error('未找到充值路径列表容器 #rechargePathsListBody');
+    if (!listContainer) {
+        console.error('未找到充值路径列表容器 #recharge-paths-ul');
         // 尝试等待DOM加载完成
         setTimeout(() => {
-            const retryListBody = document.getElementById('rechargePathsListBody');
-            if (retryListBody) {
+            const retryListContainer = document.getElementById('recharge-paths-ul');
+            if (retryListContainer) {
                 console.log('重试成功，找到列表容器');
-                renderListContent(retryListBody, paths);
+                renderListContent(retryListContainer, paths);
             } else {
                 console.error('重试后仍未找到列表容器');
             }
@@ -63,42 +63,54 @@ function renderRechargePathsList(paths) {
         return;
     }
 
-    renderListContent(listBody, paths);
+    renderListContent(listContainer, paths);
 }
 
 // 渲染列表内容
-function renderListContent(listBody, paths) {
+function renderListContent(listContainer, paths) {
     console.log('开始渲染列表内容...');
-    listBody.innerHTML = ''; // 清空现有内容
+    listContainer.innerHTML = ''; // 清空现有内容
 
     if (paths && paths.length > 0) {
         console.log(`渲染 ${paths.length} 条充值路径记录`);
         paths.forEach((path, index) => {
             console.log(`渲染第 ${index + 1} 条记录:`, path);
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${path.name || '-'}</td>
-                <td>${path.type || '-'}</td>
-                <td>${path.account || '-'}</td>
-                <td>${path.receiver || '-'}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary me-2 btn-edit-path" data-id="${path._id}">编辑</button>
-                    <button class="btn btn-sm btn-danger btn-delete-path" data-id="${path._id}">删除</button>
-                </td>
+            
+            // 创建 list-group-item
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            
+            // 构建显示内容
+            const displayContent = document.createElement('div');
+            displayContent.innerHTML = `
+                <div>
+                    ${path.icon ? `<img src="${path.icon}" alt="图标" style="width: 30px; height: 30px; margin-right: 10px;">` : ''}
+                    <span>${path.name || '未命名'} - ${path.account || '无账号'} - ${path.receiver || '无收款人'}</span>
+                </div>
             `;
-            listBody.appendChild(row);
+            
+            // 构建操作按钮
+            const actionButtons = document.createElement('div');
+            actionButtons.innerHTML = `
+                <button class="btn btn-sm btn-primary me-2 btn-edit-path" data-id="${path._id}">编辑</button>
+                <button class="btn btn-sm btn-danger btn-delete-path" data-id="${path._id}">删除</button>
+            `;
+            
+            listItem.appendChild(displayContent);
+            listItem.appendChild(actionButtons);
+            listContainer.appendChild(listItem);
         });
 
         // 为编辑和删除按钮添加事件监听
-        listBody.querySelectorAll('.btn-edit-path').forEach(button => {
+        listContainer.querySelectorAll('.btn-edit-path').forEach(button => {
             button.addEventListener('click', handleEditPath);
         });
-        listBody.querySelectorAll('.btn-delete-path').forEach(button => {
+        listContainer.querySelectorAll('.btn-delete-path').forEach(button => {
             button.addEventListener('click', handleDeletePath);
         });
     } else {
         console.log('没有充值路径记录，显示空状态');
-        listBody.innerHTML = '<tr><td colspan="5" class="text-center">暂无充值路径</td></tr>';
+        listContainer.innerHTML = '<li class="list-group-item text-center">暂无充值路径</li>';
     }
 }
 
@@ -311,7 +323,7 @@ function initRechargePathsPage() {
     console.log('🚀 初始化充值路径管理页面...');
 
     // --- 绑定弹出充值路径列表模态框的按钮事件 ---
-    const openRechargePathsListBtn = document.getElementById('btn-add-recharge-path'); // 原有的添加按钮现在用于弹出列表模态框
+    const openRechargePathsListBtn = document.getElementById('btn-recharge-paths'); // 修改为正确的按钮ID
     const rechargePathsListModalElement = document.getElementById('recharge-paths-list-modal'); // 列表模态框元素
 
     if (openRechargePathsListBtn && rechargePathsListModalElement) {
@@ -321,6 +333,8 @@ function initRechargePathsPage() {
         openRechargePathsListBtn.addEventListener('click', handleOpenRechargePathsListModal);
     } else {
         console.warn('未找到弹出充值路径列表按钮或列表模态框元素，无法绑定弹出列表事件。');
+        console.log('按钮元素:', openRechargePathsListBtn);
+        console.log('模态框元素:', rechargePathsListModalElement);
     }
 
     // --- 绑定列表模态框中添加新充值路径按钮的事件 ---
