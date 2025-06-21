@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>永鑫资本系统 - 管理控制台</title>
+    <title>永鑫资本管理控制台</title>
     <link rel="stylesheet" href="/css/lib/bootstrap.min.css">
     <link href="/css/lib/bootstrap-icons.css" rel="stylesheet">
     <link href="/css/font-awesome.min.css" rel="stylesheet">
@@ -1101,6 +1101,7 @@
                             <label for="recharge-path-name" class="form-label">充值名称</label>
                             <input type="text" class="form-control" id="recharge-path-name" name="name" required placeholder="例如：支付宝充值、微信支付等">
                         </div>
+                        <input type="hidden" id="recharge-path-type" name="type" value="other">
                         <div class="mb-3">
                             <label for="recharge-path-account" class="form-label">收款账号</label>
                             <input type="text" class="form-control" id="recharge-path-account" name="account" required>
