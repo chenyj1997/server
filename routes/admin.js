@@ -698,7 +698,7 @@ router.get('/users/:userId/invited-users', protect, restrictToAdmin, async (req,
         const queryOptions = { referrer: userId };
 
         const invitedUsers = await User.find(queryOptions)
-            .select('username numericId createdAt status email phone') // 选择需要的字段
+            .select('username inviteCode createdAt status email phone') // 选择需要的字段
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
