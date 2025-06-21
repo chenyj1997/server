@@ -784,71 +784,96 @@ const createInfoManager = () => {
                 if (coverPreviewContainer) {
                     const autoSelectBtn = document.createElement('button');
                     autoSelectBtn.type = 'button';
-                    autoSelectBtn.className = 'btn btn-warning btn-sm mb-2';
-                    autoSelectBtn.innerHTML = '<i class="bi bi-magic"></i> 自动选择图片';
+                    autoSelectBtn.className = 'btn btn-primary btn-sm mb-2';
+                    autoSelectBtn.innerHTML = '<i class="bi bi-magic"></i> 一键填充图片';
                     autoSelectBtn.onclick = async () => {
                         try {
-                            if (window.folderManager) {
-                                const result = await window.folderManager.autoSelectImages();
-                                if (result && result.coverImages && result.coverImages.length > 0) {
-                                    // 显示封面图片（只显示1张）
-                                    coverPreviewContainer.innerHTML = '';
-                                    const img = document.createElement('img');
-                                    img.src = result.coverImages[0];
-                                    img.style.display = 'block';
-                                    img.className = 'img-thumbnail';
-                                    img.style.width = '150px';
-                                    img.style.height = '150px';
-                                    img.style.objectFit = 'cover';
-                                    coverPreviewContainer.appendChild(img);
-
-                                    // 显示更多照片（只显示1张）
-                                    if (result.additionalImages && result.additionalImages.length > 0) {
-                                        const additionalImagesPreview = document.getElementById('additional-images-preview');
-                                        if (additionalImagesPreview) {
-                                            additionalImagesPreview.innerHTML = '';
-                                            const wrapper = document.createElement('div');
-                                            wrapper.className = 'position-relative d-inline-block m-1';
-                                            wrapper.style.width = '150px';
-                                            wrapper.style.height = '150px';
-                                            
-                                            wrapper.innerHTML = `
-                                                <img src="${result.additionalImages[0]}" alt="预览图片" class="img-thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
-                                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onclick="this.parentElement.remove()">
-                                                    <i class="bi bi-x"></i>
-                                                </button>
-                                            `;
-                                            additionalImagesPreview.appendChild(wrapper);
-                                        }
-                                    }
-
-                                    // 更新隐藏字段，包含所有图片
-                                    const allImages = [...(result.coverImages || []), ...(result.additionalImages || [])];
-                                    if (imageUrlsInput) {
-                                        imageUrlsInput.value = JSON.stringify(allImages);
-                                    }
-
-                                    if (window.ui) {
-                                        window.ui.showSuccess('自动选择了 1 张封面图片和 1 张更多照片');
-                                    }
-                                } else {
-                                    if (window.ui) {
-                                        window.ui.showError('没有找到可用的图片');
-                                    }
-                                }
-                            } else {
-                                if (window.ui) {
-                                    window.ui.showError('文件夹管理器未加载');
-                                }
+                            // 确保 folderManager 和新的 getFilesForUpload 方法存在
+                            if (!window.folderManager || typeof window.folderManager.getFilesForUpload !== 'function') {
+                                window.ui.showError('图片管理器未就绪或版本不正确。请在"系统管理"页面加载图片。');
+                                return;
                             }
+
+                            // 从内存队列获取文件对象
+                            const { coverFiles, additionalFiles } = window.folderManager.getFilesForUpload();
+
+                            if (coverFiles.length === 0 && additionalFiles.length === 0) {
+                                window.ui.showError('没有可用的图片。请先在"系统管理"页面加载图片。');
+                                return;
+                            }
+                            
+                            window.ui.showLoading(`正在上传 ${coverFiles.length + additionalFiles.length} 张图片...`);
+                            
+                            const uploadedUrls = {
+                                cover: [],
+                                additional: []
+                            };
+
+                            // 内部辅助函数：上传单个文件并创建预览
+                            const uploadAndPreview = async (file, previewContainer) => {
+                                const previewWrapper = document.createElement('div');
+                                previewWrapper.className = 'image-preview-item position-relative d-inline-block m-1';
+                                previewWrapper.style.width = '100px';
+                                previewWrapper.style.height = '100px';
+                                previewWrapper.innerHTML = `
+                                    <div class="uploading-overlay position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-light bg-opacity-75">
+                                        <div class="spinner-border text-primary spinner-border-sm"></div>
+                                        <small>上传中...</small>
+                                    </div>
+                                `;
+                                previewContainer.appendChild(previewWrapper);
+                                
+                                try {
+                                    const imageUrl = await uploadImage(file); // 使用已有的上传函数
+                                    previewWrapper.innerHTML = `
+                                        <img src="${imageUrl}" alt="预览图片" class="img-fluid" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onclick="infoManager.deleteImageFromModal(this, '${imageUrl}')">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    `;
+                                    previewWrapper.dataset.imageUrl = imageUrl;
+                                    return imageUrl;
+                                } catch (error) {
+                                    previewWrapper.remove();
+                                    return null;
+                                }
+                            };
+
+                            // 上传封面图片
+                            for (const file of coverFiles) {
+                                const url = await uploadAndPreview(file, coverPreviewContainer);
+                                if (url) uploadedUrls.cover.push(url);
+                            }
+
+                            // 上传更多图片
+                            const additionalImagesPreviewContainer = document.getElementById('additional-images-preview');
+                            for (const file of additionalFiles) {
+                                const url = await uploadAndPreview(file, additionalImagesPreviewContainer);
+                                if (url) uploadedUrls.additional.push(url);
+                            }
+                            
+                            // 更新隐藏的URL输入框
+                            const imageUrlsInput = document.getElementById('info-image-urls');
+                            if (imageUrlsInput) {
+                                let currentUrls = imageUrlsInput.value ? JSON.parse(imageUrlsInput.value) : [];
+                                // 合并新旧URL，并去重
+                                const finalUrls = [...new Set([...currentUrls, ...uploadedUrls.cover, ...uploadedUrls.additional])];
+                                imageUrlsInput.value = JSON.stringify(finalUrls);
+                            }
+
+                            window.ui.hideLoading();
+                            window.ui.showSuccess(`成功填充 ${uploadedUrls.cover.length} 张封面和 ${uploadedUrls.additional.length} 张更多照片`);
+
                         } catch (error) {
-                            console.error('自动选择图片失败:', error);
+                            console.error('一键填充图片失败:', error);
                             if (window.ui) {
-                                window.ui.showError('自动选择图片失败: ' + error.message);
+                                window.ui.showError('一键填充图片失败: ' + error.message);
                             }
+                            window.ui.hideLoading();
                         }
                     };
-                    coverPreviewContainer.appendChild(autoSelectBtn);
+                    // 将按钮添加到 cover-preview 容器的最前面
+                    coverPreviewContainer.prepend(autoSelectBtn);
                 }
             }
 
