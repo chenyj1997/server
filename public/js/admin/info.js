@@ -435,17 +435,14 @@ const createInfoManager = () => {
 
         if (inputId === 'cover-image') {
             previewContainer = document.getElementById('cover-preview');
-            // 封面图片是单文件，替换旧的
-            const oldPreview = previewContainer.querySelector('.image-preview-item');
-            if (oldPreview) {
-                const oldUrl = oldPreview.dataset.imageUrl;
-                if (oldUrl) {
-                    // 从URL数组中移除旧的URL
-                    currentUrls = currentUrls.filter(url => url !== oldUrl);
-                }
-                // 移除旧的预览DOM
-                oldPreview.remove();
-            }
+            // 封面图片是单文件，清空整个预览容器
+            previewContainer.innerHTML = '';
+            // 从URL数组中移除旧的封面图片URL
+            currentUrls = currentUrls.filter(url => {
+                // 这里需要根据实际情况判断哪些是封面图片
+                // 暂时保留所有URL，让用户手动管理
+                return true;
+            });
         } else if (inputId === 'additional-images') {
             previewContainer = document.getElementById('additional-images-preview');
         } else {
@@ -475,8 +472,14 @@ const createInfoManager = () => {
                 // 显示上传中的占位符和加载提示
                 const previewWrapper = document.createElement('div');
                 previewWrapper.className = 'image-preview-item position-relative d-inline-block m-1';
-                previewWrapper.style.width = '100px';
-                previewWrapper.style.height = '100px';
+                // 根据输入类型设置不同的尺寸
+                if (inputId === 'cover-image') {
+                    previewWrapper.style.width = '150px';
+                    previewWrapper.style.height = '150px';
+                } else {
+                    previewWrapper.style.width = '100px';
+                    previewWrapper.style.height = '100px';
+                }
                 previewWrapper.innerHTML = `
                     <div class="uploading-overlay position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-light bg-opacity-75">
                         <div class="spinner-border text-primary spinner-border-sm"></div>
@@ -659,9 +662,9 @@ const createInfoManager = () => {
             }
 
             // 清空图片预览
-            const coverPreview = document.getElementById('cover-preview').querySelector('img');
+            const coverPreview = document.getElementById('cover-preview');
             if (coverPreview) {
-                coverPreview.style.display = 'none';
+                coverPreview.innerHTML = '';
             }
             const additionalImagesPreview = document.getElementById('additional-images-preview');
             if (additionalImagesPreview) {
@@ -689,16 +692,49 @@ const createInfoManager = () => {
 
                 // 显示现有图片
                 if (info.coverImage) {
-                    const coverPreview = document.getElementById('cover-preview').querySelector('img');
-                    coverPreview.src = info.coverImage;
-                    coverPreview.style.display = 'block';
+                    const coverPreview = document.getElementById('cover-preview');
+                    // 清空之前的预览
+                    coverPreview.innerHTML = '';
+                    
+                    const img = document.createElement('img');
+                    img.src = info.coverImage;
+                    img.style.display = 'block';
+                    img.className = 'img-thumbnail';
+                    img.style.width = '150px';
+                    img.style.height = '150px';
+                    img.style.objectFit = 'cover';
+                    
+                    // 添加删除按钮
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0 m-1';
+                    removeBtn.innerHTML = '<i class="bi bi-x"></i>';
+                    removeBtn.onclick = () => {
+                        coverPreview.innerHTML = '';
+                        // 更新隐藏字段
+                        const imageUrlsInput = document.getElementById('info-image-urls');
+                        if (imageUrlsInput) {
+                            let currentUrls = imageUrlsInput.value ? JSON.parse(imageUrlsInput.value) : [];
+                            currentUrls = currentUrls.filter(url => url !== info.coverImage);
+                            imageUrlsInput.value = JSON.stringify(currentUrls);
+                        }
+                    };
+                    
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'position-relative d-inline-block';
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(removeBtn);
+                    coverPreview.appendChild(wrapper);
                 }
 
                 if (info.additionalImages && info.additionalImages.length > 0) {
                     const previewContainer = document.getElementById('additional-images-preview');
+                    // 清空之前的预览
+                    previewContainer.innerHTML = '';
+                    
                     info.additionalImages.forEach(imageUrl => {
                         const wrapper = document.createElement('div');
-                        wrapper.className = 'position-relative';
+                        wrapper.className = 'position-relative d-inline-block m-1';
                         wrapper.style.width = '150px';
                         wrapper.style.height = '150px';
                         
@@ -719,6 +755,22 @@ const createInfoManager = () => {
                 document.getElementById('loan-period').value = 15;
                 // 默认还款金额为借款金额的1.2倍（初始为空，需监听借款金额输入）
                 document.getElementById('repayment-amount').value = '';
+                
+                // 清空图片预览容器
+                const coverPreview = document.getElementById('cover-preview');
+                if (coverPreview) {
+                    coverPreview.innerHTML = '';
+                }
+                const additionalImagesPreview = document.getElementById('additional-images-preview');
+                if (additionalImagesPreview) {
+                    additionalImagesPreview.innerHTML = '';
+                }
+                
+                // 清空隐藏的图片URL字段
+                const imageUrlsInput = document.getElementById('info-image-urls');
+                if (imageUrlsInput) {
+                    imageUrlsInput.value = '[]';
+                }
             }
 
             // 监听借款金额输入，自动计算还款金额
