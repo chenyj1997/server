@@ -16,24 +16,21 @@ const { protect: auth } = require('../middleware/auth');
 const RechargePath = require('../models/RechargePath');
 const Notification = require('../models/Notification');
 const cors = require('cors');
+const cloudinary = require('../utils/cloudinary');
 
-// 配置multer存储
+// 配置临时文件上传（用于Cloudinary）
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // 存储到proofs目录
-        const proofDir = path.join(__dirname, '../public/uploads/proofs');
-        // 确保目录存在
-        if (!fs.existsSync(proofDir)) {
-            fs.mkdirSync(proofDir, { recursive: true });
-            console.log('创建充值凭证目录:', proofDir);
+        const tempDir = path.join(__dirname, '../temp_uploads');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
         }
-        cb(null, proofDir);
+        cb(null, tempDir);
     },
     filename: function (req, file, cb) {
-        // 生成文件名: 时间戳-原始文件名
         const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
-        cb(null, uniqueName + ext);
+        cb(null, 'temp_' + uniqueName + ext);
     }
 });
 
@@ -352,8 +349,7 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
 
         const { amount, receiveAccount, receiver } = req.body;
         
-
-        // 验证金额
+        // 验证必填字段
         if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
             console.log('金额验证失败');
             return res.status(400).json({
@@ -362,7 +358,6 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
             });
         }
 
-        // 验证收款账号
         if (!receiveAccount) {
             console.log('收款账号验证失败');
             return res.status(400).json({
@@ -371,13 +366,24 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
             });
         }
 
-        // 验证收款人
         if (!receiver) {
             console.log('收款人验证失败');
             return res.status(400).json({
                 success: false,
                 message: '请提供收款人姓名'
             });
+        }
+        
+        // 验证提现二维码（选填，但如果上传了就要验证格式）
+        if (req.file) {
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(req.file.mimetype)) {
+                console.log('二维码文件类型验证失败:', req.file.mimetype);
+                return res.status(400).json({
+                    success: false,
+                    message: '请上传支持的图片格式：JPG、PNG、GIF、WEBP'
+                });
+            }
         }
 
         // 获取用户信息
@@ -400,11 +406,35 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
             });
         }
 
-        // 提取上传的二维码文件路径
-        let qrcodePath = null;
+        // 上传二维码图片到Cloudinary（选填）
+        let qrcodeUrl = null;
         if (req.file) {
-            qrcodePath = `/uploads/proofs/${req.file.filename}`;
-            console.log('二维码文件路径:', qrcodePath);
+            try {
+                console.log('开始上传二维码到Cloudinary...');
+                const cloudinaryResult = await cloudinary.uploader.upload(req.file.path, {
+                    folder: 'withdraw-qrcodes',
+                    public_id: `withdraw_${Date.now()}_${Math.round(Math.random() * 1E9)}`,
+                    resource_type: 'image'
+                });
+                
+                qrcodeUrl = cloudinaryResult.secure_url;
+                console.log('Cloudinary上传成功:', qrcodeUrl);
+                
+                // 删除临时文件
+                fs.unlinkSync(req.file.path);
+                console.log('临时文件已删除');
+                
+            } catch (uploadError) {
+                console.error('Cloudinary上传失败:', uploadError);
+                // 删除临时文件
+                if (fs.existsSync(req.file.path)) {
+                    fs.unlinkSync(req.file.path);
+                }
+                return res.status(500).json({
+                    success: false,
+                    message: '二维码上传失败，请重试'
+                });
+            }
         }
 
         console.log('准备创建提现交易...');
@@ -416,7 +446,7 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
             paymentAccount: 'system',
             receiveAccount: receiveAccount,
             receiver: receiver,
-            qrcode: qrcodePath,
+            qrcode: qrcodeUrl, // 使用Cloudinary URL
             status: 'pending',
             balanceBefore: userForWithdraw.balance, // 记录当前余额
             balanceAfter: userForWithdraw.balance,  // 审核前余额不变
@@ -445,7 +475,7 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
 
         res.status(201).json({
             success: true,
-            message: '提现申请已提交',
+            message: '提现申请已提交，请等待审核',
             data: {
                 transactionId: transaction._id,
                 amount: transaction.amount,
@@ -458,6 +488,22 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
         console.error('=== 提现请求处理失败 ===');
         console.error('错误详情:', error);
         console.error('错误堆栈:', error.stack);
+        
+        // 处理文件上传相关错误
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+                success: false,
+                message: '文件大小超过限制，请上传5MB以内的图片'
+            });
+        }
+        
+        if (error.message && error.message.includes('只允许上传')) {
+            return res.status(400).json({
+                success: false,
+                message: '请上传支持的图片格式：JPG、PNG、GIF、WEBP'
+            });
+        }
+        
         res.status(500).json({
             success: false,
             message: '创建提现交易失败: ' + error.message
