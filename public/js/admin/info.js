@@ -778,6 +778,78 @@ const createInfoManager = () => {
                 if (imageUrlsInput) {
                     imageUrlsInput.value = '[]';
                 }
+
+                // 添加自动选择图片按钮
+                const coverPreviewContainer = document.getElementById('cover-preview');
+                if (coverPreviewContainer) {
+                    const autoSelectBtn = document.createElement('button');
+                    autoSelectBtn.type = 'button';
+                    autoSelectBtn.className = 'btn btn-warning btn-sm mb-2';
+                    autoSelectBtn.innerHTML = '<i class="bi bi-magic"></i> 自动选择图片';
+                    autoSelectBtn.onclick = async () => {
+                        try {
+                            if (window.folderManager) {
+                                const result = await window.folderManager.autoSelectImages();
+                                if (result && result.coverImages && result.coverImages.length > 0) {
+                                    // 显示封面图片（只显示1张）
+                                    coverPreviewContainer.innerHTML = '';
+                                    const img = document.createElement('img');
+                                    img.src = result.coverImages[0];
+                                    img.style.display = 'block';
+                                    img.className = 'img-thumbnail';
+                                    img.style.width = '150px';
+                                    img.style.height = '150px';
+                                    img.style.objectFit = 'cover';
+                                    coverPreviewContainer.appendChild(img);
+
+                                    // 显示更多照片（只显示1张）
+                                    if (result.additionalImages && result.additionalImages.length > 0) {
+                                        const additionalImagesPreview = document.getElementById('additional-images-preview');
+                                        if (additionalImagesPreview) {
+                                            additionalImagesPreview.innerHTML = '';
+                                            const wrapper = document.createElement('div');
+                                            wrapper.className = 'position-relative d-inline-block m-1';
+                                            wrapper.style.width = '150px';
+                                            wrapper.style.height = '150px';
+                                            
+                                            wrapper.innerHTML = `
+                                                <img src="${result.additionalImages[0]}" alt="预览图片" class="img-thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onclick="this.parentElement.remove()">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            `;
+                                            additionalImagesPreview.appendChild(wrapper);
+                                        }
+                                    }
+
+                                    // 更新隐藏字段，包含所有图片
+                                    const allImages = [...(result.coverImages || []), ...(result.additionalImages || [])];
+                                    if (imageUrlsInput) {
+                                        imageUrlsInput.value = JSON.stringify(allImages);
+                                    }
+
+                                    if (window.ui) {
+                                        window.ui.showSuccess('自动选择了 1 张封面图片和 1 张更多照片');
+                                    }
+                                } else {
+                                    if (window.ui) {
+                                        window.ui.showError('没有找到可用的图片');
+                                    }
+                                }
+                            } else {
+                                if (window.ui) {
+                                    window.ui.showError('文件夹管理器未加载');
+                                }
+                            }
+                        } catch (error) {
+                            console.error('自动选择图片失败:', error);
+                            if (window.ui) {
+                                window.ui.showError('自动选择图片失败: ' + error.message);
+                            }
+                        }
+                    };
+                    coverPreviewContainer.appendChild(autoSelectBtn);
+                }
             }
 
             // 监听借款金额输入，自动计算还款金额
