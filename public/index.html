@@ -597,6 +597,95 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 图片文件夹管理 Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="bi bi-folder-image"></i> 图片文件夹管理</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="cover-folder-path" class="form-label fw-bold">封面图片文件夹</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="cover-folder-path" placeholder="选择封面图片文件夹路径" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="btn-select-cover-folder">
+                                        <i class="bi bi-folder"></i> 选择文件夹
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">用于信息编辑时的封面图片自动选择</small>
+                                <div class="mt-2">
+                                    <span class="badge bg-info" id="cover-folder-status">未设置</span>
+                                    <span class="badge bg-secondary ms-2" id="cover-folder-count">0 张图片</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="additional-folder-path" class="form-label fw-bold">更多照片文件夹</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="additional-folder-path" placeholder="选择更多照片文件夹路径" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="btn-select-additional-folder">
+                                        <i class="bi bi-folder"></i> 选择文件夹
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">用于信息编辑时的更多照片自动选择</small>
+                                <div class="mt-2">
+                                    <span class="badge bg-info" id="additional-folder-status">未设置</span>
+                                    <span class="badge bg-secondary ms-2" id="additional-folder-count">0 张图片</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto-delete-used-images" checked>
+                                    <label class="form-check-label" for="auto-delete-used-images">
+                                        使用后自动删除图片
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">选中后，图片上传成功后会从原文件夹中删除，避免重复使用</small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="random-select-images" checked>
+                                    <label class="form-check-label" for="random-select-images">
+                                        随机选择图片
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">选中后，每次编辑信息时随机选择图片，否则按文件名顺序选择</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="cover-images-count" class="form-label">封面图片数量</label>
+                                <input type="number" class="form-control" id="cover-images-count" min="1" max="5" value="1">
+                                <small class="form-text text-muted">每次编辑信息时自动选择的封面图片数量</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="additional-images-count" class="form-label">更多照片数量</label>
+                                <input type="number" class="form-control" id="additional-images-count" min="1" max="10" value="2">
+                                <small class="form-text text-muted">每次编辑信息时自动选择的更多照片数量</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <button class="btn btn-primary me-2" id="btn-save-folder-settings">
+                                    <i class="bi bi-save"></i> 保存设置
+                                </button>
+                                <button class="btn btn-info me-2" id="btn-refresh-folder-status">
+                                    <i class="bi bi-arrow-clockwise"></i> 刷新状态
+                                </button>
+                                <button class="btn btn-warning" id="btn-test-auto-select">
+                                    <i class="bi bi-play"></i> 测试自动选择
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="folder-settings-feedback" class="mt-3"></div>
+                    </div>
+                </div>
             </div>
 
         </div>
