@@ -12,7 +12,6 @@ const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
 const RechargePath = require('../models/RechargePath');
-const SystemSettings = require('../models/SystemSettings');
 
 // DELETE /api/admin/users/:id - 删除用户
 router.delete('/users/:id', async (req, res) => {
