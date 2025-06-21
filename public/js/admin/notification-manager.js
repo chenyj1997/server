@@ -3,16 +3,33 @@
  * 负责处理系统通知的显示和管理
  */
 const notificationManager = {
+    // 初始化状态标记
+    _initialized: false,
+    
     // 初始化通知页面
     init() {
+        // 防止重复初始化
+        if (this._initialized) {
+            console.log('通知管理器已经初始化，跳过重复初始化');
+            return;
+        }
+        
         this.removeEventListeners(); // 先移除已有的事件监听器
         this.addEventListeners();
         this.refreshAllNotifications();
-        // this.setupAutoNotifications(); // 设置自动通知
+        this._initialized = true; // 标记为已初始化
+        console.log('通知管理器初始化完成');
     },
 
     // 初始化通知页面（供外部调用）
     async initNotificationPage() {
+        // 如果已经初始化，只刷新数据
+        if (this._initialized) {
+            console.log('通知管理器已初始化，只刷新数据');
+            await this.refreshAllNotifications();
+            return;
+        }
+        
         this.init();
     },
 
@@ -23,7 +40,8 @@ const notificationManager = {
 
             const token = localStorage.getItem('token');
             if (!token) {
-                throw new Error('未登录或登录已过期');
+                console.warn('未登录或登录已过期，跳过通知加载');
+                return;
             }
 
             // 修改查询参数，使用字符串类型
@@ -35,8 +53,9 @@ const notificationManager = {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('获取通知列表失败，响应内容：', errorData);
-                throw new Error(errorData.message || '获取通知列表失败');
+                console.warn('获取通知列表失败:', errorData.message);
+                // 不显示错误提示，因为通知可能不是必需的
+                return;
             }
 
             const data = await response.json();
@@ -47,8 +66,8 @@ const notificationManager = {
             this.renderNotificationList(systemNotifications || []);
 
         } catch (error) {
-            console.error('加载通知列表异常：', error);
-            if (window.ui) window.ui.showError('加载通知列表失败');
+            console.warn('加载通知列表异常：', error);
+            // 不显示错误提示，因为通知可能不是必需的
         } finally {
             if (window.ui) window.ui.hideLoading();
         }
@@ -784,7 +803,8 @@ const notificationManager = {
             
             const token = localStorage.getItem('token');
             if (!token) {
-                throw new Error('未登录或登录已过期');
+                console.warn('未登录或登录已过期，跳过交易通知加载');
+                return;
             }
 
             const response = await fetch('/api/admin/transactions/notifications', {
@@ -794,14 +814,16 @@ const notificationManager = {
             });
 
             if (!response.ok) {
-                throw new Error('获取交易通知失败');
+                console.warn('获取交易通知失败');
+                return;
             }
 
             const data = await response.json();
             this.renderTransactionNotifications(data.data || []);
 
         } catch (error) {
-            if (window.ui) window.ui.showError('加载交易通知失败');
+            console.warn('加载交易通知失败:', error);
+            // 不显示错误提示，因为通知可能不是必需的
         } finally {
             if (window.ui) window.ui.hideLoading();
         }
@@ -931,7 +953,7 @@ const notificationManager = {
 // 将通知管理器对象添加到全局作用域
 window.notificationManager = notificationManager;
 
-// 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', () => {
-    notificationManager.init();
-}); 
+// 移除自动初始化，改为手动调用
+// document.addEventListener('DOMContentLoaded', () => {
+//     notificationManager.init();
+// }); 
