@@ -8,6 +8,11 @@ const Notification = require('../models/Notification');
 const { protect, restrictToAdmin } = require('../middleware/auth'); // Add missing middleware imports
 const SystemSetting = require('../models/SystemSetting'); // 引入SystemSetting模型
 const { generateRandomInfo } = require('../utils/randomInfoGenerator'); // 新增：导入随机信息生成函数
+const fs = require('fs').promises;
+const path = require('path');
+const multer = require('multer');
+const RechargePath = require('../models/RechargePath');
+const SystemSettings = require('../models/SystemSettings');
 
 // DELETE /api/admin/users/:id - 删除用户
 router.delete('/users/:id', async (req, res) => {
@@ -845,5 +850,190 @@ router.get('/generate-random-info', (req, res) => {
         });
     }
 });
+
+// 图片文件夹管理相关API
+router.post('/folder-settings', protect, restrictToAdmin, async (req, res) => {
+    try {
+        const { coverFolderPath, additionalFolderPath, autoDeleteUsedImages, randomSelectImages, coverImagesCount, additionalImagesCount } = req.body;
+        
+        // 保存设置到数据库或配置文件
+        await SystemSetting.findOneAndUpdate(
+            { key: 'folderSettings' },
+            {
+                key: 'folderSettings',
+                value: {
+                    coverFolderPath,
+                    additionalFolderPath,
+                    autoDeleteUsedImages,
+                    randomSelectImages,
+                    coverImagesCount: parseInt(coverImagesCount),
+                    additionalImagesCount: parseInt(additionalImagesCount)
+                }
+            },
+            { upsert: true, new: true }
+        );
+
+        res.json({ success: true, message: '文件夹设置已保存' });
+    } catch (error) {
+        console.error('保存文件夹设置失败:', error);
+        res.status(500).json({ success: false, message: '保存设置失败' });
+    }
+});
+
+router.post('/folder-image-count', protect, restrictToAdmin, async (req, res) => {
+    try {
+        const { folderPath } = req.body;
+        
+        if (!folderPath) {
+            return res.status(400).json({ success: false, message: '文件夹路径不能为空' });
+        }
+
+        // 检查文件夹是否存在
+        try {
+            await fs.access(folderPath);
+        } catch (error) {
+            return res.status(400).json({ success: false, message: '文件夹不存在或无权限访问' });
+        }
+
+        // 获取文件夹中的图片文件
+        const files = await fs.readdir(folderPath);
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+        const imageFiles = files.filter(file => {
+            const ext = path.extname(file).toLowerCase();
+            return imageExtensions.includes(ext);
+        });
+
+        res.json({ success: true, count: imageFiles.length });
+    } catch (error) {
+        console.error('获取图片数量失败:', error);
+        res.status(500).json({ success: false, message: '获取图片数量失败' });
+    }
+});
+
+router.post('/test-auto-select', protect, restrictToAdmin, async (req, res) => {
+    try {
+        const { coverFolderPath, additionalFolderPath, coverImagesCount, additionalImagesCount, randomSelect } = req.body;
+        
+        const result = await selectImagesFromFolders(
+            coverFolderPath, 
+            additionalFolderPath, 
+            parseInt(coverImagesCount), 
+            parseInt(additionalImagesCount), 
+            randomSelect,
+            false // 测试模式不删除文件
+        );
+
+        res.json({ success: true, ...result });
+    } catch (error) {
+        console.error('测试自动选择失败:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.post('/auto-select-images', protect, restrictToAdmin, async (req, res) => {
+    try {
+        const { coverFolderPath, additionalFolderPath, coverImagesCount, additionalImagesCount, randomSelect, autoDelete } = req.body;
+        
+        const result = await selectImagesFromFolders(
+            coverFolderPath, 
+            additionalFolderPath, 
+            parseInt(coverImagesCount), 
+            parseInt(additionalImagesCount), 
+            randomSelect,
+            autoDelete
+        );
+
+        res.json({ success: true, ...result });
+    } catch (error) {
+        console.error('自动选择图片失败:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 辅助函数：从文件夹中选择图片
+async function selectImagesFromFolders(coverFolderPath, additionalFolderPath, coverCount, additionalCount, randomSelect, autoDelete) {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+    const result = { coverImages: [], additionalImages: [] };
+
+    // 选择封面图片
+    if (coverFolderPath && coverCount > 0) {
+        try {
+            const files = await fs.readdir(coverFolderPath);
+            const imageFiles = files.filter(file => {
+                const ext = path.extname(file).toLowerCase();
+                return imageExtensions.includes(ext);
+            });
+
+            if (imageFiles.length > 0) {
+                let selectedFiles;
+                if (randomSelect) {
+                    // 随机选择
+                    selectedFiles = [];
+                    const shuffled = [...imageFiles].sort(() => 0.5 - Math.random());
+                    selectedFiles = shuffled.slice(0, Math.min(coverCount, imageFiles.length));
+                } else {
+                    // 按文件名顺序选择
+                    selectedFiles = imageFiles.slice(0, Math.min(coverCount, imageFiles.length));
+                }
+
+                result.coverImages = selectedFiles.map(file => path.join(coverFolderPath, file));
+
+                // 如果启用自动删除，删除已选择的文件
+                if (autoDelete) {
+                    for (const file of selectedFiles) {
+                        try {
+                            await fs.unlink(path.join(coverFolderPath, file));
+                        } catch (error) {
+                            console.error(`删除文件失败: ${file}`, error);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('读取封面图片文件夹失败:', error);
+        }
+    }
+
+    // 选择更多照片
+    if (additionalFolderPath && additionalCount > 0) {
+        try {
+            const files = await fs.readdir(additionalFolderPath);
+            const imageFiles = files.filter(file => {
+                const ext = path.extname(file).toLowerCase();
+                return imageExtensions.includes(ext);
+            });
+
+            if (imageFiles.length > 0) {
+                let selectedFiles;
+                if (randomSelect) {
+                    // 随机选择
+                    selectedFiles = [];
+                    const shuffled = [...imageFiles].sort(() => 0.5 - Math.random());
+                    selectedFiles = shuffled.slice(0, Math.min(additionalCount, imageFiles.length));
+                } else {
+                    // 按文件名顺序选择
+                    selectedFiles = imageFiles.slice(0, Math.min(additionalCount, imageFiles.length));
+                }
+
+                result.additionalImages = selectedFiles.map(file => path.join(additionalFolderPath, file));
+
+                // 如果启用自动删除，删除已选择的文件
+                if (autoDelete) {
+                    for (const file of selectedFiles) {
+                        try {
+                            await fs.unlink(path.join(additionalFolderPath, file));
+                        } catch (error) {
+                            console.error(`删除文件失败: ${file}`, error);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('读取更多照片文件夹失败:', error);
+        }
+    }
+
+    return result;
+}
 
 module.exports = router; 
