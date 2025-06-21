@@ -123,6 +123,15 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
         const { name, account, receiver, sort, type } = req.body;
         const active = req.body.isActive === 'true' || req.body.isActive === true;
         
+        // 添加详细的调试日志
+        console.log('DEBUG: 解析的字段值:');
+        console.log('  name:', name, '类型:', typeof name);
+        console.log('  account:', account, '类型:', typeof account);
+        console.log('  receiver:', receiver, '类型:', typeof receiver);
+        console.log('  sort:', sort, '类型:', typeof sort);
+        console.log('  type:', type, '类型:', typeof type);
+        console.log('  active:', active, '类型:', typeof active);
+        
         // 验证必填字段
         if (!name || !account) {
             return res.status(400).json({
@@ -131,17 +140,22 @@ router.post('/', uploadAnyMiddleware, async (req, res) => {
             });
         }
         
-        // 创建新的充值路径
-        const path = new RechargePath({
-            name,
-            account,
-            receiver: receiver || '',
-            type: type || 'other',
+        // 创建新的充值路径对象
+        const pathData = {
+            name: String(name || ''),
+            account: String(account || ''),
+            receiver: String(receiver || ''),
+            type: String(type || 'other'),
             icon: iconFile ? `/uploads/icons/${iconFile.filename}` : null,
             qrCode: qrcodeFile ? `/uploads/qrcodes/${qrcodeFile.filename}` : null,
             sort: sort ? parseInt(sort) : 0,
-            active: active
-        });
+            active: Boolean(active)
+        };
+        
+        console.log('DEBUG: 准备创建的充值路径数据:', pathData);
+        
+        // 创建新的充值路径
+        const path = new RechargePath(pathData);
         
         await path.save();
         
