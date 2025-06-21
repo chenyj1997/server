@@ -497,16 +497,26 @@ const adManager = {
         const statusInput = document.getElementById('ad-status');
         const previewImg = document.querySelector('#ad-image-preview img');
 
+        // 检查必要元素是否存在
+        if (!modal || !form || !idInput || !pathInput || !statusInput) {
+            console.error('广告模态框相关元素未找到');
+            return;
+        }
+
         // 重置表单
         form.reset();
-        previewImg.style.display = 'none';
+        
+        // 安全地处理预览图片
+        if (previewImg) {
+            previewImg.style.display = 'none';
+        }
 
         if (ad) {
             // 编辑模式
             idInput.value = ad._id;
             pathInput.value = ad.path;
             statusInput.checked = ad.status === 'active';
-            if (ad.imageUrl) {
+            if (ad.imageUrl && previewImg) {
                 previewImg.src = ad.imageUrl;
                 previewImg.style.display = 'block';
             }
@@ -564,6 +574,11 @@ const adManager = {
         if (file) {
             const reader = new FileReader();
             const previewImg = document.querySelector('#ad-image-preview img');
+            
+            if (!previewImg) {
+                console.error('预览图片元素未找到');
+                return;
+            }
             
             reader.onload = (e) => {
                 previewImg.src = e.target.result;
