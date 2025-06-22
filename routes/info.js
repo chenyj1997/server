@@ -1152,6 +1152,8 @@ router.post('/:id/purchase', protect, async (req, res) => {
     // 记录购买
     info.purchasers.push(userId);
     info.purchaseTime = new Date();
+    info.status = 'sold';
+    info.saleStatus = '已售出';
     await info.save();
     console.log('[购买接口] 信息保存后 purchasers:', info.purchasers);
     // 记录购买表
