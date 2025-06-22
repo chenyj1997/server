@@ -373,7 +373,7 @@ const PORT = process.env.PORT || 3030;
 
 // 启动本地测试服务器
 server.listen(PORT, () => {
-    console.log(`        本地服务已启动!        `);
+    console.log(`        服务已启动!        `);
 });
 
 // 全局未捕获异常和未处理Promise拒绝处理
