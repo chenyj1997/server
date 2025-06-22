@@ -457,10 +457,10 @@ async function handleAdminImageUpload(event) {
 
     try {
         const formData = new FormData();
-        formData.append('file', file); // 'file' is the key expected by /info/upload/image
+        formData.append('file', file); // 'file' is the key expected by /customer-service/upload/image
 
-        // Upload image
-        const uploadResponse = await fetchWithAuth('/api/info/upload/image', {
+        // Upload image using customer service specific endpoint
+        const uploadResponse = await fetchWithAuth('/api/customer-service/upload/image', {
             method: 'POST',
             body: formData,
         });
