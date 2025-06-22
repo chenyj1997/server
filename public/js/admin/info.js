@@ -149,46 +149,282 @@ const createInfoManager = () => {
     };
 
     // 初始化信息管理页面
-    async function initInfoPage() {
+    const initInfoPage = async () => {
         try {
-            window.ui.showLoading("初始化页面..."); // 更具体的加载提示
-
-            // 获取信息列表
+            window.ui.showLoading("初始化页面..."); // 显示加载提示
+            console.log('初始化信息管理页面...');
+            
+            // 同步服务器时间
+            await syncTimeWithServer();
+            
+            // 加载信息列表
             const response = await getInfoList(currentPage, pageSize);
-
-            // 渲染信息列表
-            if (response && response.data && response.data.list) { // 增加检查
+            if (response && response.data && response.data.list) {
                 await renderInfoList(response.data.list);
-                 // 渲染分页
                 renderPagination(response.total);
             } else {
                 console.error('获取信息列表失败或返回数据格式不正确:', response);
                 window.ui.showError('加载信息列表失败，请稍后重试。');
-                // 确保在出错时也隐藏加载提示
                 const infoListContainer = document.getElementById('info-list-container');
                 if (infoListContainer) {
                     infoListContainer.innerHTML = '<div class="col-12"><p class="text-center text-danger">加载列表失败</p></div>';
                 }
             }
-
-            // 绑定事件
+            
+            // 初始化事件监听
             initEvents();
-
+            
+            // 初始化自动还款监控
+            initAutoRepaymentMonitoring();
+            
+            console.log('信息管理页面初始化完成');
         } catch (error) {
             console.error('初始化信息管理页面失败:', error);
-            window.ui.showError('加载信息管理页面失败: ' + error.message);
-             const infoListContainer = document.getElementById('info-list-container');
+            window.ui.showError('初始化页面失败: ' + error.message);
+            const infoListContainer = document.getElementById('info-list-container');
             if (infoListContainer) {
                 infoListContainer.innerHTML = '<div class="col-12"><p class="text-center text-danger">加载列表时发生错误</p></div>';
             }
         } finally {
-            window.ui.hideLoading(); // 隐藏全局的 loading-overlay
+            window.ui.hideLoading(); // 隐藏加载提示
             const specificInfoListLoading = document.getElementById('info-list-loading');
             if (specificInfoListLoading) {
                 specificInfoListLoading.style.display = 'none'; // 专门隐藏 info-list-loading
             }
         }
-    }
+    };
+
+    // 初始化自动还款监控
+    const initAutoRepaymentMonitoring = () => {
+        // 添加监控统计按钮到工具栏
+        const toolbar = document.querySelector('#info-section .toolbar');
+        if (toolbar) {
+            const monitoringBtn = document.createElement('button');
+            monitoringBtn.className = 'btn btn-outline-info btn-sm ms-2';
+            monitoringBtn.innerHTML = '<i class="fas fa-chart-line"></i> 自动还款监控';
+            monitoringBtn.onclick = showAutoRepaymentStats;
+            toolbar.appendChild(monitoringBtn);
+        }
+        
+        // 定期刷新监控数据
+        setInterval(updateAutoRepaymentStats, 60000); // 每分钟更新一次
+    };
+
+    // 显示自动还款统计
+    const showAutoRepaymentStats = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('未登录，请先登录');
+            }
+
+            const response = await fetch('/api/admin/auto-repayment-stats', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                displayAutoRepaymentStats(data.data);
+            } else {
+                throw new Error(data.message || '获取统计信息失败');
+            }
+        } catch (error) {
+            console.error('获取自动还款统计失败:', error);
+            window.ui.showError('获取统计信息失败: ' + error.message);
+        }
+    };
+
+    // 显示自动还款统计弹窗
+    const displayAutoRepaymentStats = (stats) => {
+        const modalHtml = `
+            <div class="modal fade" id="autoRepaymentStatsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-chart-line text-info"></i>
+                                自动还款监控统计
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card bg-primary text-white mb-3">
+                                        <div class="card-body">
+                                            <h6 class="card-title">已调度</h6>
+                                            <h3 class="mb-0">${stats.totalScheduled}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-success text-white mb-3">
+                                        <div class="card-body">
+                                            <h6 class="card-title">已执行</h6>
+                                            <h3 class="mb-0">${stats.totalExecuted}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-danger text-white mb-3">
+                                        <div class="card-body">
+                                            <h6 class="card-title">执行失败</h6>
+                                            <h3 class="mb-0">${stats.totalFailed}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-warning text-dark mb-3">
+                                        <div class="card-body">
+                                            <h6 class="card-title">重试次数</h6>
+                                            <h3 class="mb-0">${stats.totalRetries}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h6>系统状态</h6>
+                                <p><strong>最后运行时间:</strong> ${stats.lastRun ? new Date(stats.lastRun).toLocaleString() : '未运行'}</p>
+                                <p><strong>运行时长:</strong> ${formatUptime(stats.uptime)}</p>
+                                <p><strong>错误数量:</strong> ${stats.errors.length}</p>
+                            </div>
+                            
+                            ${stats.errors.length > 0 ? `
+                                <div class="mt-3">
+                                    <h6>最近错误</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>时间</th>
+                                                    <th>错误</th>
+                                                    <th>上下文</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${stats.errors.slice(-5).map(error => `
+                                                    <tr>
+                                                        <td>${new Date(error.timestamp).toLocaleString()}</td>
+                                                        <td>${error.error}</td>
+                                                        <td>${error.context}</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                            <button type="button" class="btn btn-warning" onclick="resetAutoRepaymentStats()">重置统计</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 移除已存在的模态框
+        const existingModal = document.getElementById('autoRepaymentStatsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // 添加新模态框
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // 显示模态框
+        const modal = new bootstrap.Modal(document.getElementById('autoRepaymentStatsModal'));
+        modal.show();
+    };
+
+    // 格式化运行时长
+    const formatUptime = (uptime) => {
+        if (!uptime) return '未运行';
+        
+        const hours = Math.floor(uptime / (1000 * 60 * 60));
+        const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((uptime % (1000 * 60)) / 1000);
+        
+        return `${hours}小时${minutes}分钟${seconds}秒`;
+    };
+
+    // 更新自动还款统计
+    const updateAutoRepaymentStats = async () => {
+        // 静默更新，不显示错误
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const response = await fetch('/api/admin/auto-repayment-stats', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // 更新页面上的统计显示（如果有的话）
+                const statsDisplay = document.getElementById('autoRepaymentStatsDisplay');
+                if (statsDisplay) {
+                    statsDisplay.innerHTML = `
+                        <small class="text-muted">
+                            调度: ${data.data.totalScheduled} | 
+                            执行: ${data.data.totalExecuted} | 
+                            失败: ${data.data.totalFailed}
+                        </small>
+                    `;
+                }
+            }
+        } catch (error) {
+            // 静默处理错误
+            console.debug('更新自动还款统计失败:', error);
+        }
+    };
+
+    // 重置自动还款统计
+    const resetAutoRepaymentStats = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('未登录，请先登录');
+            }
+
+            const response = await fetch('/api/admin/auto-repayment-stats/reset', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                window.ui.showSuccess('统计信息已重置');
+                // 关闭模态框并重新显示
+                const modal = bootstrap.Modal.getInstance(document.getElementById('autoRepaymentStatsModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                setTimeout(showAutoRepaymentStats, 500);
+            } else {
+                throw new Error(data.message || '重置失败');
+            }
+        } catch (error) {
+            console.error('重置自动还款统计失败:', error);
+            window.ui.showError('重置统计信息失败: ' + error.message);
+        }
+    };
+
+    // 将重置函数暴露到全局
+    window.resetAutoRepaymentStats = resetAutoRepaymentStats;
 
     // 获取信息列表
     async function getInfoList(page = 1, limit = 12, searchTerm = '', status = '', startDate = '', endDate = '') {
@@ -1345,9 +1581,97 @@ const createInfoManager = () => {
                     statusDisplay += ' <span class="badge bg-primary">待自动还款</span>';
                 }
 
+                // 添加警告状态标记
+                if (info.isCritical) {
+                    statusDisplay += ' <span class="badge bg-danger">已过期</span>';
+                } else if (info.isWarning) {
+                    statusDisplay += ' <span class="badge bg-warning text-dark">即将到期</span>';
+                }
+
+                // 计算卡片样式和警告覆盖
+                let cardClass = 'card info-card h-100';
+                let cardStyle = 'cursor: pointer;';
+                let warningOverlay = '';
+                const cardId = `info-card-${info._id}`;
+
+                if (info.isCritical) {
+                    cardClass += ' border-danger';
+                    cardStyle += 'border-width: 3px; box-shadow: 0 0 20px rgba(220, 53, 69, 0.5);';
+                    warningOverlay = `
+                        <div class="warning-overlay critical" style="
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: rgba(220, 53, 69, 0.2);
+                            z-index: 10;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 0.375rem;
+                        ">
+                            <div class="text-danger fw-bold fs-6">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                已过期！请立即处理
+                            </div>
+                        </div>
+                    `;
+                    // 添加到警告系统
+                    if (typeof warningSystem !== 'undefined') {
+                        warningSystem.addWarningCard(cardId);
+                    }
+                } else if (info.isWarning) {
+                    cardClass += ' border-warning';
+                    cardStyle += 'border-width: 2px; box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);';
+                    warningOverlay = `
+                        <div class="warning-overlay warning" style="
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: rgba(255, 193, 7, 0.15);
+                            z-index: 10;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 0.375rem;
+                        ">
+                            <div class="text-warning fw-bold">
+                                <i class="fas fa-clock me-2"></i>
+                                即将到期
+                            </div>
+                        </div>
+                    `;
+                    // 添加到警告系统
+                    if (typeof warningSystem !== 'undefined') {
+                        warningSystem.addWarningCard(cardId);
+                    }
+                } else if (info.isPendingAutoRepayment) {
+                    cardClass += ' border-primary';
+                    cardStyle += 'border-width: 2px;';
+                }
+
+                // 计算剩余时间显示
+                let timeDisplay = '';
+                if (info.remainingTime !== null && info.remainingTime !== undefined) {
+                    const hours = Math.floor(info.remainingTime / (1000 * 60 * 60));
+                    const minutes = Math.floor((info.remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    if (info.isCritical) {
+                        timeDisplay = `<span class="text-danger fw-bold">已过期 ${Math.abs(hours)}小时${Math.abs(minutes)}分钟</span>`;
+                    } else if (info.isWarning) {
+                        timeDisplay = `<span class="text-warning fw-bold">剩余 ${hours}小时${minutes}分钟</span>`;
+                    } else if (hours > 0) {
+                        timeDisplay = `<span class="text-muted">剩余 ${hours}小时${minutes}分钟</span>`;
+                    }
+                }
+
                 return `
                     <div class="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-2 col-xxl-2 mb-4">
-                        <div class="card info-card h-100 ${info.isPendingAutoRepayment ? 'border-primary' : ''}" data-info-id="${info._id || ''}" style="cursor: pointer; ${info.isPendingAutoRepayment ? 'border-width: 2px;' : ''}">
+                        <div class="${cardClass}" id="${cardId}" data-info-id="${info._id || ''}" style="${cardStyle}">
+                            ${warningOverlay}
                             <div class="info-image">
                                 ${imageUrl ? 
                                     `<img src="${imageUrl}" class="card-img-top" alt="信息图片" onerror="this.style.display='none';">` :
@@ -1359,10 +1683,12 @@ const createInfoManager = () => {
                                     <small class="text-muted">价格: ¥${info.loanAmount ? info.loanAmount.toFixed(2) : (info.price ? info.price.toFixed(2) : 'N/A')}</small><br>
                                     <small class="text-muted">状态: ${statusDisplay}</small><br>
                                     <small class="text-muted card-countdown-display" id="card-countdown-${info._id || ''}">倒计时: N/A</small>
+                                    ${timeDisplay ? `<br><small class="text-muted">${timeDisplay}</small>` : ''}
                                 </p>
                                 <div class="info-card-actions mt-3">
                                     <button class="btn btn-sm btn-info" onclick="infoManager.viewInfo('${info._id || ''}')">查看</button>
                                     ${(info.status === 'OFFLINE' || !(info.purchasers && info.purchasers.length > 0)) ? `<button class="btn btn-sm btn-danger" onclick="infoManager.deleteInfoConfirm('${info._id || ''}')">删除</button>` : ''}
+                                    ${(info.isCritical || info.isWarning) ? `<button class="btn btn-sm btn-warning" onclick="infoManager.repayInfo('${info._id || ''}')">立即还款</button>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1669,7 +1995,12 @@ const createInfoManager = () => {
         goToPage, // 导出分页跳转函数
         deleteInfoConfirm, // 导出删除确认函数
         repayInfo, // 导出还款函数，确保按钮可用
-        handleImageUpload // 导出图片上传函数
+        handleImageUpload, // 导出图片上传函数
+        initAutoRepaymentMonitoring, // 导出自动还款监控初始化函数
+        showAutoRepaymentStats, // 导出显示自动还款统计函数
+        displayAutoRepaymentStats, // 导出显示自动还款统计弹窗函数
+        updateAutoRepaymentStats, // 导出更新自动还款统计函数
+        resetAutoRepaymentStats, // 导出重置自动还款统计函数
     };
 };
 
@@ -1708,3 +2039,107 @@ document.addEventListener('DOMContentLoaded', function() {
 function showMessage(message, type = 'info') {
     // ... existing code ...
 }
+
+// 添加警告音效和通知功能
+const warningSystem = {
+    audio: null,
+    notificationInterval: null,
+    warningCards: new Set(),
+    
+    // 初始化音效
+    initAudio: () => {
+        try {
+            // 创建警告音效（使用Web Audio API）
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+            
+            warningSystem.audio = audioContext;
+        } catch (error) {
+            console.warn('无法创建音效:', error);
+        }
+    },
+    
+    // 播放警告音效
+    playWarningSound: () => {
+        if (warningSystem.audio) {
+            try {
+                warningSystem.audio.resume();
+                warningSystem.initAudio();
+            } catch (error) {
+                console.warn('播放音效失败:', error);
+            }
+        }
+    },
+    
+    // 开始持续通知
+    startContinuousNotification: () => {
+        if (warningSystem.notificationInterval) {
+            return; // 已经在运行
+        }
+        
+        console.log('开始持续警告通知');
+        warningSystem.notificationInterval = setInterval(() => {
+            warningSystem.playWarningSound();
+            
+            // 浏览器通知
+            if (Notification.permission === 'granted') {
+                new Notification('还款警告', {
+                    body: '有信息即将到期，请及时处理！',
+                    icon: '/images/warning-icon.png',
+                    tag: 'repayment-warning'
+                });
+            }
+        }, 30000); // 每30秒播放一次
+    },
+    
+    // 停止持续通知
+    stopContinuousNotification: () => {
+        if (warningSystem.notificationInterval) {
+            clearInterval(warningSystem.notificationInterval);
+            warningSystem.notificationInterval = null;
+            console.log('停止持续警告通知');
+        }
+    },
+    
+    // 添加警告卡片
+    addWarningCard: (cardId) => {
+        warningSystem.warningCards.add(cardId);
+        if (warningSystem.warningCards.size > 0) {
+            warningSystem.startContinuousNotification();
+        }
+    },
+    
+    // 移除警告卡片
+    removeWarningCard: (cardId) => {
+        warningSystem.warningCards.delete(cardId);
+        if (warningSystem.warningCards.size === 0) {
+            warningSystem.stopContinuousNotification();
+        }
+    },
+    
+    // 请求通知权限
+    requestNotificationPermission: () => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+};
+
+// 初始化警告系统
+document.addEventListener('DOMContentLoaded', () => {
+    warningSystem.requestNotificationPermission();
+});
