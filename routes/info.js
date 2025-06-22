@@ -203,31 +203,51 @@ router.get('/list', protect, async (req, res) => {
 
         // 为每条信息添加是否待处理的标记
         const now = new Date();
-        const eightHoursLater = new Date(Date.now() + 8 * 60 * 60 * 1000);
-
+        const eightHoursLater = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+        const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        
         const processedInfos = fixedInfos.map(info => {
-            const isPending = !info.isPaid &&
-                              ( (info.expiryTime && new Date(info.expiryTime) <= now) || 
-                                info.isAutoRepaymentScheduled ||
-                                (info.expiryTime && new Date(info.expiryTime) > now && new Date(info.expiryTime) <= eightHoursLater && !info.isAutoRepaymentScheduled)
-                              );
-            
             // 计算时间相关字段
             let purchaseTime = null;
             let expiryTime = null;
             let remainingTime = null;
+            let isPending = false;
+            let isWarning = false; // 新增：警告状态（剩余2小时内）
+            let isCritical = false; // 新增：紧急状态（已过期）
             
             if (info.purchaseTime) {
                 purchaseTime = new Date(info.purchaseTime).getTime();
                 if (info.period) {
                     expiryTime = purchaseTime + (info.period * 24 * 60 * 60 * 1000);
                     remainingTime = Math.max(0, expiryTime - Date.now());
+                    
+                    // 判断状态
+                    if (remainingTime === 0) {
+                        // 已过期
+                        isCritical = true;
+                        isPending = true;
+                    } else if (remainingTime <= 2 * 60 * 60 * 1000) {
+                        // 剩余2小时内
+                        isWarning = true;
+                        isPending = !info.isPaid && (
+                            info.isAutoRepaymentScheduled ||
+                            (expiryTime > now && expiryTime <= twoHoursLater && !info.isAutoRepaymentScheduled)
+                        );
+                    } else if (remainingTime <= 8 * 60 * 60 * 1000) {
+                        // 剩余8小时内
+                        isPending = !info.isPaid && (
+                            info.isAutoRepaymentScheduled ||
+                            (expiryTime > now && expiryTime <= eightHoursLater && !info.isAutoRepaymentScheduled)
+                        );
+                    }
                 }
             }
             
             return { 
                 ...info, 
                 isPendingAutoRepayment: isPending,
+                isWarning, // 新增：警告状态
+                isCritical, // 新增：紧急状态
                 purchaseTime,
                 expiryTime,
                 remainingTime
