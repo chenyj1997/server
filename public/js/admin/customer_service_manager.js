@@ -574,6 +574,7 @@ function displayAdminChatMessages(messages, userId, isLoadMore = false, newMessa
         const senderName = msg.sender ? msg.sender.username : (isUserMessage ? '用户' : '我 (管理员)');
         const messageTime = new Date(msg.createdAt).toLocaleString();
         let messageHtml = '';
+        
         if (msg.messageType === 'image' && msg.imageUrl) {
             // 如果imageUrl已经是完整的URL（以http或https开头），直接使用
             // 否则添加BASE_STATIC_URL前缀
@@ -587,10 +588,12 @@ function displayAdminChatMessages(messages, userId, isLoadMore = false, newMessa
                 </div>
             `;
         } else {
+            // 确保文本消息内容使用p标签包装，以便CSS样式正确应用
+            const messageContent = msg.content ? msg.content.replace(/\n/g, '<br>') : '';
             messageHtml = `
                 <div class="chat-message ${isMyMessage ? 'chat-message-right' : 'chat-message-left'}">
                     <div class="message-bubble ${isMyMessage ? 'bg-primary text-white' : 'bg-light text-dark'}">
-                        <p>${msg.content}</p>
+                        <p>${messageContent}</p>
                         <div class="message-meta ${isMyMessage ? 'text-white-50' : 'text-muted'}">${senderName} - ${messageTime}</div>
                     </div>
                 </div>
