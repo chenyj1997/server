@@ -45,7 +45,7 @@ const notificationManager = {
             }
 
             // 修改查询参数，使用字符串类型
-            const response = await fetch(`/api/notifications/list?type=SYSTEM`, {
+            const response = await fetch(`/api/admin/notifications/list?type=SYSTEM`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -648,11 +648,15 @@ const notificationManager = {
                 displayUser = notification.user?.username || '未知用户'; // Existing logic for other types
             }
 
+            const isExpense = ['withdraw', 'purchase'].includes(String(notification.type).toLowerCase());
+            const amountDisplay = isExpense ? `-` : `+`;
+            const amountColor = isExpense ? 'text-danger' : 'text-success';
+
             return `
                 <tr>
                     <td>${this.getTransactionTypeText(notification.type)}</td>
                     <td>${displayUser}</td>
-                    <td>¥${notification.amount.toFixed(2)}</td>
+                    <td class="${amountColor}">${amountDisplay}¥${notification.amount.toFixed(2)}</td>
                     <td>${new Date(notification.createdAt).toLocaleString()}</td>
                     <td>
                         <span class="badge ${notification.notificationSent ? 'bg-success' : 'bg-secondary'}">
