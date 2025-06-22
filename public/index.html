@@ -1551,7 +1551,21 @@
                     </div>
                     <button type="button" id="applyTransactionFilters" class="btn btn-primary btn-sm mb-3">查询</button>
                     <div id="userTransactionsTableContainer">
-                        <p>正在加载...</p>
+                        <table class="table table-sm table-striped table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>类型</th>
+                                    <th>金额</th>
+                                    <th>交易后余额</th>
+                                    <th>状态</th>
+                                    <th>备注</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-transactions-tbody">
+                                <tr><td colspan="6" class="text-center">请查询用户数据...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div class="modal-footer">
