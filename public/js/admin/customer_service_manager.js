@@ -248,10 +248,12 @@ function initializeAdminChat() {
 
     if (imageUploadButton && imageUploadInput) {
         imageUploadButton.addEventListener('click', () => {
+            // 当点击图标按钮时，触发隐藏的文件输入框
             imageUploadInput.click();
         });
 
         imageUploadInput.addEventListener('change', (event) => {
+            // 当用户选择了文件后，调用上传处理函数
             handleAdminImageUpload(event);
         });
     } else {
@@ -625,47 +627,6 @@ function handleChatScroll(event) {
         loadAndDisplayAdminMessages(adminChatCurrentOpenUserId, true, false); // loadMore = true, no full loading indicator
     }
 }
-
-// Call initializeAdminChat when the script loads or when appropriate in your admin panel init sequence
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if we are on a page that requires admin chat, or if it's globally initialized
-    // For now, let's assume it's always initialized if this script is loaded.
-    customerServiceManager.initializeAdminChat(); 
-
-    // Add event listener to the main chat icon/button that opens the modal
-    const openChatModalButton = document.querySelector('[data-bs-target="#admin-customer-chat-modal"]');
-    if (openChatModalButton) {
-        openChatModalButton.addEventListener('click', () => {
-            // When modal is about to be shown, load conversations
-            // This ensures fresh conversation list every time modal is opened
-            customerServiceManager.loadAdminConversations();
-            // Initial message area state
-             const messagesContainer = document.getElementById('chat-messages');
-            if(messagesContainer) messagesContainer.innerHTML = '<p class="text-muted text-center mt-3">请选择一个用户开始聊天</p>';
-        });
-    }
-});
-
-// Other customer service related functions (listings, add, edit, delete - if they were in this file)
-// These seem to be for a different section管理客服账号, not the chat itself.
-// window.adminCustomerServiceManager = (function() { ... }) // Original structure if it was like this
-
-// Example of how you might have other manager functions if this file was more than just chat:
-/*
-const adminCustomerServiceManager = {
-    // ... (chat functions we just defined, moved under this object if preferred)
-    // ... (other service management functions)
-};
-
-if (typeof window.adminCustomerServiceManager === 'undefined') {
-    window.adminCustomerServiceManager = adminCustomerServiceManager;
-    document.addEventListener('DOMContentLoaded', () => {
-        if (document.getElementById('customer-service-list-section')) { // Or whatever identifies the non-chat CS page
-            // window.adminCustomerServiceManager.initCustomerServicePage(); 
-        }
-    });
-}
-*/
 
 const customerServiceManager = {
     // 初始化客服页面
