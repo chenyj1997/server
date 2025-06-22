@@ -139,17 +139,13 @@ const scheduleAutoRepayments = async () => {
 
         // 批量处理调度
         const scheduleProcessor = async (info) => {
-            const randomTimeWindowStart = now.getTime();
-            const randomTimeWindowEnd = info.expiryTime.getTime();
-            const randomRepaymentTime = new Date(randomTimeWindowStart + Math.random() * (randomTimeWindowEnd - randomTimeWindowStart));
-
             await Info.findByIdAndUpdate(info._id, {
-                isAutoRepaymentScheduled: true,
-                autoRepaymentTime: randomRepaymentTime
+                isAutoRepaymentScheduled: true
+                // 不再设置随机的 autoRepaymentTime
             });
 
-            console.log(`[AUTO_REPAYMENT_SCHEDULE] 信息 ${info._id} 已调度，还款时间: ${randomRepaymentTime.toISOString()}`);
-            return { infoId: info._id, scheduledTime: randomRepaymentTime };
+            console.log(`[AUTO_REPAYMENT_SCHEDULE] 信息 ${info._id} 已调度，等待执行。`);
+            return { infoId: info._id, scheduled: true };
         };
 
         const results = await processBatch(infosToSchedule, scheduleProcessor);
@@ -182,25 +178,25 @@ const executeAutoRepayments = async () => {
 
     try {
         const now = new Date();
+        const BATCH_SIZE = CONCURRENCY_CONFIG.batchSize || 10; // 使用配置的批处理大小
 
-        // 查找需要还款的信息
+        // 查找需要还款的信息：
+        // 1. 任何已调度(isAutoRepaymentScheduled: true)的任务
+        // 2. 或任何已过期(expiryTime <= now)的任务作为安全兜底
+        // 每次只处理一小批，以实现负载均衡
         const infosToRepay = await Info.find({
-            $or: [
-                {
-                    isAutoRepaymentScheduled: true,
-                    autoRepaymentTime: { $lte: now }
-                },
-                {
-                    expiryTime: { $lte: now },
-                    isAutoRepaymentScheduled: false
-                }
-            ],
             isPaid: false,
             purchasers: { $exists: true, $not: { $size: 0 } },
-            period: { $gt: 0 }
-        }).populate('purchasers', '_id').populate('author', '_id');
+            $or: [
+                { isAutoRepaymentScheduled: true },
+                { expiryTime: { $lte: now } }
+            ]
+        })
+        .limit(BATCH_SIZE)
+        .populate('purchasers', '_id')
+        .populate('author', '_id');
 
-        console.log(`[AUTO_REPAYMENT_EXECUTE] 找到 ${infosToRepay.length} 个信息需要还款`);
+        console.log(`[AUTO_REPAYMENT_EXECUTE] 找到 ${infosToRepay.length} 个信息需要还款（批处理大小: ${BATCH_SIZE}）`);
 
         if (infosToRepay.length === 0) {
             console.log(`[AUTO_REPAYMENT_EXECUTE] 没有需要还款的信息`);
