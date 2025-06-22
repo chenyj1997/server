@@ -597,9 +597,9 @@ function createUserManager() {
 
     userManager.fetchUserTransactions = async function(userId, page = 1, limit = this.TRANSACTION_PAGE_SIZE, filters = {}) {
         if (!userId) { console.warn("fetchUserTransactions called with no userId"); return; }
-        const container = document.getElementById('userTransactionsTableContainer');
-        if (!container) { console.error("#userTransactionsTableContainer not found"); return; }
-        container.innerHTML = '<p class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> 正在加载明细...</p>';
+        const tbody = document.getElementById('user-transactions-tbody');
+        if (!tbody) { console.error("#user-transactions-tbody not found"); return; }
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div> 正在加载明细...</td></tr>';
         try {
             const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
             if (!token) throw new Error('未授权访问');
@@ -610,30 +610,38 @@ function createUserManager() {
             if (!response.ok || !data.success) throw new Error(data.message || '获取资金明细失败');
             this.renderUserTransactions(data);
         } catch (error) {
-            if (container) container.innerHTML = `<p class="text-center text-danger">加载失败: ${error.message}</p>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">加载失败: ${error.message}</td></tr>`;
             if (window.ui) window.ui.showError(`加载资金明细失败: ${error.message}`);
         }
     };
 
     userManager.renderUserTransactions = function(data) {
-        const container = document.getElementById('userTransactionsTableContainer');
+        const tbody = document.getElementById('user-transactions-tbody');
         const paginationInfo = document.getElementById('transactionsPaginationInfo');
         const prevBtn = document.getElementById('prevTransactionsPage');
         const nextBtn = document.getElementById('nextTransactionsPage');
-        if (!container || !paginationInfo || !prevBtn || !nextBtn) { console.error("Transaction modal elements not found for render."); return; }
-        container.innerHTML = ''; 
+        if (!tbody || !paginationInfo || !prevBtn || !nextBtn) { console.error("Transaction modal elements not found for render."); return; }
+        
+        tbody.innerHTML = ''; 
         const transactions = data.data || [];
         if (transactions.length === 0) {
-            container.innerHTML = '<p class="text-center">该用户暂无资金明细记录。</p>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">该用户暂无资金明细记录。</td></tr>';
         } else {
-            let tableHtml = '<table class="table table-sm table-striped table-hover align-middle">';
-            tableHtml += '<thead><tr><th>时间</th><th>类型</th><th>金额</th><th>状态</th><th>备注</th></tr></thead><tbody>';
+            let rowsHtml = '';
             transactions.forEach(tx => {
                 const amountClass = tx.amount > 0 && ['recharge', 'transfer_in', 'refund', 'reward'].includes(tx.type) ? 'text-success' : (tx.amount < 0 || ['withdraw', 'purchase', 'transfer_out', 'fee'].includes(tx.type) ? 'text-danger' : '');
-                tableHtml += `<tr><td>${new Date(tx.createdAt).toLocaleString()}</td><td>${this.getTransactionTypeDisplay(tx.type)}</td><td><span class="${amountClass}">${tx.amount ? tx.amount.toFixed(2) : '0.00'}</span></td><td>${this.getStatusDisplay(tx.status)}</td><td>${tx.remark || '-'}</td></tr>`;
+                const balanceAfterDisplay = (typeof tx.balanceAfter === 'number') ? `¥${tx.balanceAfter.toFixed(2)}` : 'N/A';
+                rowsHtml += `
+                    <tr>
+                        <td>${new Date(tx.createdAt).toLocaleString()}</td>
+                        <td>${this.getTransactionTypeDisplay(tx.type)}</td>
+                        <td><span class="${amountClass}">${tx.amount ? tx.amount.toFixed(2) : '0.00'}</span></td>
+                        <td>${balanceAfterDisplay}</td>
+                        <td>${this.getStatusDisplay(tx.status)}</td>
+                        <td>${tx.remark || '-'}</td>
+                    </tr>`;
             });
-            tableHtml += '</tbody></table>';
-            container.innerHTML = tableHtml;
+            tbody.innerHTML = rowsHtml;
         }
         this.currentTransactionPage = data.page;
         paginationInfo.textContent = `第 ${data.page} / ${data.totalPages || 1} 页 (共 ${data.total || 0} 条)`;
