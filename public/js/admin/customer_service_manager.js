@@ -248,11 +248,14 @@ function initializeAdminChat() {
 
     if (imageUploadButton && imageUploadInput) {
         imageUploadButton.addEventListener('click', () => {
-            imageUploadInput.click(); // Trigger click on hidden file input
+            imageUploadInput.click();
         });
-        imageUploadInput.addEventListener('change', handleAdminImageUpload);
+
+        imageUploadInput.addEventListener('change', (event) => {
+            handleAdminImageUpload(event);
+        });
     } else {
-        console.error('Admin chat image upload button or input not found during init!');
+        console.error('Admin chat image upload button or input not found!');
     }
 
     // Listen for modal close to stop active polling
