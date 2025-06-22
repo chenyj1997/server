@@ -92,12 +92,26 @@ mongoose.connect(config.mongoURI, {
 });
 
 // 新增：设置定时自动还款任务
-cron.schedule('0 * * * *', () => {
-    scheduleAutoRepayments();
+// 调度任务：每小时执行一次，处理未来8小时到2小时内的信息
+cron.schedule('0 * * * *', async () => {
+    try {
+        console.log(`[CRON_SCHEDULE] 开始执行自动还款调度任务 - ${new Date().toISOString()}`);
+        await scheduleAutoRepayments();
+        console.log(`[CRON_SCHEDULE] 自动还款调度任务完成 - ${new Date().toISOString()}`);
+    } catch (error) {
+        console.error(`[CRON_SCHEDULE] 自动还款调度任务失败:`, error);
+    }
 });
 
-cron.schedule('*/10 * * * *', () => {
-    executeAutoRepayments();
+// 执行任务：每5分钟执行一次，处理已到期的信息
+cron.schedule('*/5 * * * *', async () => {
+    try {
+        console.log(`[CRON_EXECUTE] 开始执行自动还款执行任务 - ${new Date().toISOString()}`);
+        await executeAutoRepayments();
+        console.log(`[CRON_EXECUTE] 自动还款执行任务完成 - ${new Date().toISOString()}`);
+    } catch (error) {
+        console.error(`[CRON_EXECUTE] 自动还款执行任务失败:`, error);
+    }
 });
 
 // 自动修正所有历史数据的 loanAmount 字段（只执行一次即可，生产环境建议注释掉）
@@ -359,6 +373,12 @@ const PORT = process.env.PORT || 3030;
 
 // 启动本地测试服务器
 server.listen(PORT, () => {
+    console.log(`[本地测试] 服务器运行在 http://localhost:${PORT}`);
+    console.log(`[本地测试] 当前环境: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`[本地测试] MongoDB URI: ${config.mongoURI}`);
+    console.log(`[本地测试] ------------------------------------`);
+    console.log(`[本地测试]        本地服务已启动!        `);
+    console.log(`[本地测试] ------------------------------------`);
 });
 
 // 全局未捕获异常和未处理Promise拒绝处理
