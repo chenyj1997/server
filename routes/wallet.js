@@ -529,36 +529,12 @@ router.get('/transactions', async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // 1. 获取用户的最新信息，特别是当前准确的余额
-        const user = await User.findById(userId).lean();
-        if (!user) {
-            return res.status(404).json({ success: false, message: '用户不存在' });
-        }
-        const currentUserBalance = user.balance;
-
         // 2. 强制按 `createdAt` (创建时间) 降序排序，获取该用户的所有交易
+        //    直接返回数据库中记录的交易信息，不再进行任何倒推计算。
+        //    每条交易记录在审核时已经保存了正确的 `balanceAfter`。
         const transactions = await Transaction.find({ user: userId })
             .sort({ createdAt: -1 })
             .lean();
-
-        // 3. 倒序遍历，计算每笔交易后的余额
-        let runningBalance = currentUserBalance;
-        for (const tx of transactions) {
-            tx.balanceAfter = runningBalance;
-            
-            // 为了计算上一笔（更早的）交易的余额，我们需要根据交易类型反向计算
-            if (tx.type === 'recharge' || tx.type === 'reward' || tx.type === 'refund') {
-                // 充值、奖励、退款等增加余额的交易，倒推时应减去金额
-                runningBalance -= Number(tx.amount);
-            } else if (tx.type === 'withdraw' || tx.type === 'consume') {
-                // 提现、消费等减少余额的交易，倒推时应加上金额
-                runningBalance += Number(tx.amount);
-            } else {
-                // 对于未知或未处理的类型，默认按支出处理（减去），并打印警告
-                console.warn(`未知交易类型: ${tx.type}，在计算历史余额时默认按增加余额处理（倒推时减去金额）。`);
-                runningBalance -= Number(tx.amount);
-            }
-        }
 
         res.json({
             success: true,
