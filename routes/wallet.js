@@ -528,17 +528,33 @@ router.post('/withdraw', auth, upload.single('qrcode'), verifyPayPassword, async
 router.get('/transactions', async (req, res) => {
     try {
         const userId = req.user.id;
-        // 使用 .populate('infoId', '_id') 来关联查询信息的ID
-        const allTransactions = await Transaction.find({ user: userId })
-            .populate('infoId', '_id') // 使用正确的字段名 'infoId'
+
+        // 1. 获取用户的最新信息，特别是当前准确的余额
+        const user = await User.findById(userId).lean();
+        if (!user) {
+            return res.status(404).json({ success: false, message: '用户不存在' });
+        }
+        const currentUserBalance = user.balance;
+
+        // 2. 强制按 `createdAt` (创建时间) 降序排序，获取该用户的所有交易
+        const transactions = await Transaction.find({ user: userId })
             .sort({ createdAt: -1 })
             .lean();
 
+        // 3. 倒序遍历，计算每笔交易后的余额
+        let runningBalance = currentUserBalance;
+        for (const tx of transactions) {
+            tx.balanceAfter = runningBalance;
+            // 为了计算上一笔（更早的）交易的余额，我们需要减去当前这笔交易的影响
+            runningBalance -= tx.amount; 
+        }
+
         res.json({
             success: true,
-            data: allTransactions,
-            total: allTransactions.length
+            data: transactions,
+            total: transactions.length
         });
+
     } catch (error) {
         console.error('获取交易记录错误:', error);
         res.status(500).json({
