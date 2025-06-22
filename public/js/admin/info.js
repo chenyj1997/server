@@ -153,10 +153,10 @@ const createInfoManager = () => {
         try {
             window.ui.showLoading("初始化页面..."); // 显示加载提示
             console.log('初始化信息管理页面...');
-            
+
             // 同步服务器时间
             await syncTimeWithServer();
-            
+
             // 加载信息列表
             const response = await getInfoList(currentPage, pageSize);
             if (response && response.data && response.data.list) {
@@ -170,10 +170,10 @@ const createInfoManager = () => {
                     infoListContainer.innerHTML = '<div class="col-12"><p class="text-center text-danger">加载列表失败</p></div>';
                 }
             }
-            
+
             // 初始化事件监听
             initEvents();
-            
+
             // 初始化自动还款监控
             initAutoRepaymentMonitoring();
             
@@ -181,7 +181,7 @@ const createInfoManager = () => {
         } catch (error) {
             console.error('初始化信息管理页面失败:', error);
             window.ui.showError('初始化页面失败: ' + error.message);
-            const infoListContainer = document.getElementById('info-list-container');
+             const infoListContainer = document.getElementById('info-list-container');
             if (infoListContainer) {
                 infoListContainer.innerHTML = '<div class="col-12"><p class="text-center text-danger">加载列表时发生错误</p></div>';
             }
