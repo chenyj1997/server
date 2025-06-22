@@ -373,12 +373,7 @@ const PORT = process.env.PORT || 3030;
 
 // 启动本地测试服务器
 server.listen(PORT, () => {
-    console.log(`[本地测试] 服务器运行在 http://localhost:${PORT}`);
-    console.log(`[本地测试] 当前环境: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`[本地测试] MongoDB URI: ${config.mongoURI}`);
-    console.log(`[本地测试] ------------------------------------`);
-    console.log(`[本地测试]        本地服务已启动!        `);
-    console.log(`[本地测试] ------------------------------------`);
+    console.log(`        本地服务已启动!        `);
 });
 
 // 全局未捕获异常和未处理Promise拒绝处理
