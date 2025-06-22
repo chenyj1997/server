@@ -879,28 +879,3 @@ const customerServiceManager = {
 };
 
 window.customerServiceManager = customerServiceManager;
-
-// Ensure DOMContentLoaded listener for chat is correctly placed and doesn't conflict
-// The previous DOMContentLoaded was for global chat initialization.
-// If customerServiceManager.initCustomerServicePage() is for a specific admin page section for managing CS *accounts*,
-// it should be called conditionally.
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize chat features globally (like background polling, modal listeners)
-    window.customerServiceManager.initializeAdminChat(); 
-
-    // Add event listener to the main chat icon/button that opens the modal
-    const openChatModalButton = document.querySelector('[data-bs-target="#admin-customer-chat-modal"]');
-    if (openChatModalButton) {
-        openChatModalButton.addEventListener('click', () => {
-            window.customerServiceManager.loadAdminConversations();
-            const messagesContainer = document.getElementById('chat-messages');
-            if(messagesContainer) messagesContainer.innerHTML = '<p class="text-muted text-center mt-3">请选择一个用户开始聊天</p>';
-        });
-    }
-
-    // If there's a specific section for managing CS accounts, initialize that too.
-    if (document.getElementById('customer-service-list-section')) { // Example ID for the CS management page section
-        window.customerServiceManager.initCustomerServicePage();
-    }
-});
