@@ -451,20 +451,54 @@ async function handleAdminImageUpload(event) {
         return;
     }
 
-    // Show a loading indicator (e.g., disable buttons)
-    const sendButton = document.getElementById('button-send-admin');
-    const imageUploadBtn = document.getElementById('button-upload-image-admin');
-    const inputField = document.getElementById('admin-message-input');
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+        showToast('请选择图片文件！', 'error');
+        event.target.value = '';
+        return;
+    }
+
+    // 验证文件大小（例如限制为5MB）
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+        showToast('图片文件过大，请选择小于5MB的图片！', 'error');
+        event.target.value = '';
+        return;
+    }
+
+    // 创建本地预览URL
+    const previewUrl = URL.createObjectURL(file);
     
-    sendButton.disabled = true;
-    imageUploadBtn.disabled = true;
-    inputField.disabled = true;
+    // 立即在对话框中显示预览
+    const tempMessageId = 'temp-' + Date.now();
+    const tempMessage = {
+        _id: tempMessageId,
+        senderType: 'admin',
+        messageType: 'image',
+        imageUrl: previewUrl,
+        content: '',
+        createdAt: new Date(),
+        sender: { username: '我 (管理员)' },
+        isTemp: true, // 标记为临时消息
+        isError: false // Assuming no error initially
+    };
+
+    // 添加到缓存并显示
+    if (!adminChatMessagesCache[adminChatCurrentOpenUserId]) {
+        adminChatMessagesCache[adminChatCurrentOpenUserId] = [];
+    }
+    adminChatMessagesCache[adminChatCurrentOpenUserId].push(tempMessage);
+    displayAdminChatMessages(adminChatMessagesCache[adminChatCurrentOpenUserId], adminChatCurrentOpenUserId);
+    scrollToBottom(document.getElementById('chat-messages'));
+
+    // 显示上传进度提示
+    showToast('正在上传图片...', 'info');
 
     try {
         const formData = new FormData();
-        formData.append('file', file); // 'file' is the key expected by /customer-service/upload/image
+        formData.append('file', file);
 
-        // Upload image using customer service specific endpoint
+        // 异步上传图片
         const uploadResponse = await fetchWithAuth('/api/customer-service/upload/image', {
             method: 'POST',
             body: formData,
@@ -472,20 +506,45 @@ async function handleAdminImageUpload(event) {
 
         if (uploadResponse.success && uploadResponse.data && uploadResponse.data.url) {
             const imageUrl = uploadResponse.data.url;
-            // Send image message
-            await sendAdminMessage(adminChatCurrentOpenUserId, '', 'image', imageUrl); // No content for image message
+            
+            // 发送图片消息到服务器
+            const result = await sendAdminMessage(adminChatCurrentOpenUserId, '', 'image', imageUrl);
+            
+            if (result && result.success) {
+                // 上传成功，移除临时消息
+                adminChatMessagesCache[adminChatCurrentOpenUserId] = adminChatMessagesCache[adminChatCurrentOpenUserId].filter(
+                    msg => msg._id !== tempMessageId
+                );
+                showToast('图片发送成功！', 'success');
+            } else {
+                // 发送失败，保留临时消息但标记为错误
+                const tempMsg = adminChatMessagesCache[adminChatCurrentOpenUserId].find(msg => msg._id === tempMessageId);
+                if (tempMsg) {
+                    tempMsg.isError = true;
+                    displayAdminChatMessages(adminChatMessagesCache[adminChatCurrentOpenUserId], adminChatCurrentOpenUserId);
+                }
+                showToast('图片发送失败！', 'error');
+            }
         } else {
+            // 上传失败，移除临时消息
+            adminChatMessagesCache[adminChatCurrentOpenUserId] = adminChatMessagesCache[adminChatCurrentOpenUserId].filter(
+                msg => msg._id !== tempMessageId
+            );
+            displayAdminChatMessages(adminChatMessagesCache[adminChatCurrentOpenUserId], adminChatCurrentOpenUserId);
             showToast(uploadResponse.message || '图片上传失败！', 'error');
         }
     } catch (error) {
         console.error('图片上传或发送失败:', error);
+        // 上传失败，移除临时消息
+        adminChatMessagesCache[adminChatCurrentOpenUserId] = adminChatMessagesCache[adminChatCurrentOpenUserId].filter(
+            msg => msg._id !== tempMessageId
+        );
+        displayAdminChatMessages(adminChatMessagesCache[adminChatCurrentOpenUserId], adminChatCurrentOpenUserId);
         showToast(error.message || '图片上传或发送失败！', 'error');
     } finally {
-        sendButton.disabled = false;
-        imageUploadBtn.disabled = false;
-        inputField.disabled = false;
+        // 清理本地预览URL
+        URL.revokeObjectURL(previewUrl);
         event.target.value = ''; // Clear file input value to allow re-uploading the same file
-        scrollToBottom(document.getElementById('chat-messages'));
     }
 }
 
@@ -493,15 +552,15 @@ async function handleAdminImageUpload(event) {
 async function sendAdminMessage(userId, content, messageType = 'text', imageUrl = null) {
     if (!content.trim() && messageType === 'text') { // Only require content for text messages
         showToast('消息内容不能为空！', 'warning');
-        return;
+        return { success: false, message: '消息内容不能为空' };
     }
     if (messageType === 'image' && !imageUrl) {
         showToast('图片消息缺少URL！', 'error');
-        return;
+        return { success: false, message: '图片消息缺少URL' };
     }
     if (!userId) {
         showToast('请先选择一个用户！', 'error');
-        return;
+        return { success: false, message: '请先选择一个用户' };
     }
 
     const messageInput = document.getElementById('admin-message-input');
@@ -534,12 +593,15 @@ async function sendAdminMessage(userId, content, messageType = 'text', imageUrl 
             messageInput.value = ''; // Clear input field only for text messages
             scrollToBottom(document.getElementById('chat-messages'));
             await loadAdminConversations(); // Refresh conversation list to update unread counts
+            return { success: true, data: result.data };
         } else {
             showToast(result.message || '发送消息失败！', 'error');
+            return { success: false, message: result.message || '发送消息失败' };
         }
     } catch (error) {
         console.error('发送消息错误:', error);
         showToast(error.message || '发送消息出错！', 'error');
+        return { success: false, message: error.message || '发送消息出错' };
     } finally {
         sendButton.disabled = false;
         imageUploadBtn.disabled = false;
@@ -580,14 +642,27 @@ function displayAdminChatMessages(messages, userId, isLoadMore = false, newMessa
         const messageTime = new Date(msg.createdAt).toLocaleString();
         let messageHtml = '';
         
+        // 为临时消息和错误消息添加特殊样式
+        const isTempMessage = msg.isTemp;
+        const isError = msg.isError;
+        const bubbleClass = isMyMessage ? 'bg-primary text-white' : 'bg-light text-dark';
+        const tempClass = isTempMessage ? 'opacity-75' : '';
+        const errorClass = isError ? 'border border-danger' : '';
+        
         if (msg.messageType === 'image' && msg.imageUrl) {
             // 如果imageUrl已经是完整的URL（以http或https开头），直接使用
             // 否则添加BASE_STATIC_URL前缀
             const fullImageUrl = msg.imageUrl.startsWith('http') ? msg.imageUrl : `${BASE_STATIC_URL}${msg.imageUrl}`;
+            
+            // 为临时消息添加上传状态指示
+            const statusText = isTempMessage ? 
+                (isError ? '<small class="text-danger">发送失败</small>' : '<small class="text-muted">正在上传...</small>') : '';
+            
             messageHtml = `
                 <div class="chat-message ${isMyMessage ? 'chat-message-right' : 'chat-message-left'}">
-                    <div class="message-bubble ${isMyMessage ? 'bg-primary text-white' : 'bg-light text-dark'}">
+                    <div class="message-bubble ${bubbleClass} ${tempClass} ${errorClass}">
                         <img src="${fullImageUrl}" alt="${msg.content || '图片消息'}" class="img-fluid rounded chat-image-preview" style="max-width: 150px; max-height: 150px; object-fit: contain; cursor: pointer;" onclick="openImageModal('${fullImageUrl}')">
+                        ${statusText}
                         <div class="message-meta ${isMyMessage ? 'text-white-50' : 'text-muted'}">${senderName} - ${messageTime}</div>
                     </div>
                 </div>
@@ -595,10 +670,16 @@ function displayAdminChatMessages(messages, userId, isLoadMore = false, newMessa
         } else {
             // 确保文本消息内容使用p标签包装，以便CSS样式正确应用
             const messageContent = msg.content ? msg.content.replace(/\n/g, '<br>') : '';
+            
+            // 为临时消息添加上传状态指示
+            const statusText = isTempMessage ? 
+                (isError ? '<small class="text-danger">发送失败</small>' : '<small class="text-muted">正在发送...</small>') : '';
+            
             messageHtml = `
                 <div class="chat-message ${isMyMessage ? 'chat-message-right' : 'chat-message-left'}">
-                    <div class="message-bubble ${isMyMessage ? 'bg-primary text-white' : 'bg-light text-dark'}">
+                    <div class="message-bubble ${bubbleClass} ${tempClass} ${errorClass}">
                         <p>${messageContent}</p>
+                        ${statusText}
                         <div class="message-meta ${isMyMessage ? 'text-white-50' : 'text-muted'}">${senderName} - ${messageTime}</div>
                     </div>
                 </div>
