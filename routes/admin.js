@@ -604,6 +604,11 @@ router.get('/users/:userId/transactions', protect, restrictToAdmin, async (req, 
             return res.status(400).json({ success: false, message: '无效的用户ID格式' });
         }
 
+        const user = await User.findById(userId).lean();
+        if (!user) {
+            return res.status(404).json({ success: false, message: '用户不存在' });
+        }
+
         const queryOptions = { user: userId };
 
         if (type) {
@@ -618,7 +623,6 @@ router.get('/users/:userId/transactions', protect, restrictToAdmin, async (req, 
                 queryOptions.createdAt.$gte = new Date(startDate);
             }
             if (endDate) {
-                // Ensure endDate includes the whole day
                 const endOfDay = new Date(endDate);
                 endOfDay.setHours(23, 59, 59, 999);
                 queryOptions.createdAt.$lte = endOfDay;
@@ -628,13 +632,38 @@ router.get('/users/:userId/transactions', protect, restrictToAdmin, async (req, 
         const transactions = await Transaction.find(queryOptions)
             .sort({ createdAt: -1 })
             .skip((parseInt(page) - 1) * parseInt(limit))
-            .limit(parseInt(limit));
+            .limit(parseInt(limit))
+            .lean(); // Use lean() for performance and easier object manipulation
 
         const totalTransactions = await Transaction.countDocuments(queryOptions);
 
+        if (transactions.length > 0) {
+            // To calculate running balance, we work backwards from the user's current balance.
+            const balanceQueryOptions = { ...queryOptions };
+            const firstTxOnPage = transactions[0];
+            balanceQueryOptions.createdAt = {
+                ...(balanceQueryOptions.createdAt || {}),
+                $gt: firstTxOnPage.createdAt
+            };
+
+            const newerTransactions = await Transaction.find(balanceQueryOptions).select('amount').lean();
+            const sumOfNewerAmounts = newerTransactions.reduce((acc, tx) => acc + tx.amount, 0);
+
+            // This is the balance right AFTER the first (newest) transaction on our page was completed.
+            let balanceAfterTx = user.balance - sumOfNewerAmounts;
+            
+            // Now, iterate through the page's transactions (which are plain JS objects) to assign the calculated balance.
+            for (const tx of transactions) {
+                tx.balanceAfter = balanceAfterTx;
+                // For the next (older) transaction in the list, its "balanceAfter" is the current one's,
+                // plus the inverse of the current transaction's amount.
+                balanceAfterTx -= tx.amount;
+            }
+        }
+
         res.json({
             success: true,
-            data: transactions,
+            data: transactions, // Send back the modified array
             total: totalTransactions,
             page: parseInt(page),
             limit: parseInt(limit),
