@@ -545,8 +545,19 @@ router.get('/transactions', async (req, res) => {
         let runningBalance = currentUserBalance;
         for (const tx of transactions) {
             tx.balanceAfter = runningBalance;
-            // 为了计算上一笔（更早的）交易的余额，我们需要减去当前这笔交易的影响
-            runningBalance -= tx.amount; 
+            
+            // 为了计算上一笔（更早的）交易的余额，我们需要根据交易类型反向计算
+            if (tx.type === 'recharge' || tx.type === 'reward' || tx.type === 'refund') {
+                // 充值、奖励、退款等增加余额的交易，倒推时应减去金额
+                runningBalance -= Number(tx.amount);
+            } else if (tx.type === 'withdraw' || tx.type === 'consume') {
+                // 提现、消费等减少余额的交易，倒推时应加上金额
+                runningBalance += Number(tx.amount);
+            } else {
+                // 对于未知或未处理的类型，默认按支出处理（减去），并打印警告
+                console.warn(`未知交易类型: ${tx.type}，在计算历史余额时默认按增加余额处理（倒推时减去金额）。`);
+                runningBalance -= Number(tx.amount);
+            }
         }
 
         res.json({
