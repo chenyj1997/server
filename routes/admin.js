@@ -1117,4 +1117,42 @@ async function selectImagesFromFolders(coverFolderPath, additionalFolderPath, co
     return result;
 }
 
+// 自动还款监控统计
+router.get('/auto-repayment-stats', protect, restrictToAdmin, async (req, res) => {
+    try {
+        const { getMonitoringStats } = require('../utils/autoRepaymentTasks');
+        const stats = getMonitoringStats();
+        
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        console.error('获取自动还款统计失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '获取统计信息失败'
+        });
+    }
+});
+
+// 重置自动还款监控统计
+router.post('/auto-repayment-stats/reset', protect, restrictToAdmin, async (req, res) => {
+    try {
+        const { resetMonitoringStats } = require('../utils/autoRepaymentTasks');
+        resetMonitoringStats();
+        
+        res.json({
+            success: true,
+            message: '统计信息已重置'
+        });
+    } catch (error) {
+        console.error('重置自动还款统计失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '重置统计信息失败'
+        });
+    }
+});
+
 module.exports = router; 
