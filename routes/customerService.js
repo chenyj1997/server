@@ -4,6 +4,41 @@ const User = require('../models/User');
 const CustomerServiceMessage = require('../models/CustomerServiceMessage');
 const mongoose = require('mongoose');
 const { protect, restrictToAdmin } = require('../middleware/auth');
+const multer = require('multer');
+const cloudinary = require('../utils/cloudinary');
+const fs = require('fs');
+const path = require('path');
+
+// 配置multer用于文件上传
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '../public/uploads/customer-service');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('只允许上传图片文件'), false);
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB
+    }
+});
 
 // GET /api/customer-service/conversations - 获取所有与客服有消息往来的用户列表 (管理员)
 router.get('/conversations', [protect, restrictToAdmin], async (req, res) => {
@@ -230,6 +265,25 @@ router.put('/messages/:messageId/read', [protect], async (req, res) => {
     }
 });
 
+// POST /api/customer-service/messages/mark-all-as-read - 用户将所有收到的客服消息标记为已读
+router.post('/messages/mark-all-as-read', [protect], async (req, res) => {
+    const userId = req.user.id;
+    console.log(`收到用户 ${userId} 标记所有客服消息为已读的请求`);
+
+    try {
+        const result = await CustomerServiceMessage.updateMany(
+            { user: userId, senderType: 'admin', isRead: false },
+            { $set: { isRead: true, readBy: userId, readAt: new Date() } }
+        );
+
+        console.log(`用户 ${userId} 的 ${result.modifiedCount} 条客服消息被标记为已读`);
+        res.json({ success: true, message: '所有未读消息已标记为已读', modifiedCount: result.modifiedCount });
+
+    } catch (error) {
+        console.error(`标记用户 ${userId} 所有消息为已读时出错:`, error);
+        res.status(500).json({ success: false, message: '操作失败', error: error.message });
+    }
+});
 
 // GET /api/customer-service/unread-count - 获取当前用户/管理员的未读消息总数
 router.get('/unread-count', [protect], async (req, res) => {
@@ -286,6 +340,39 @@ router.put('/conversations/:userId/hide', [protect, restrictToAdmin], async (req
     } catch (error) {
         console.error(`隐藏用户 ${userId} 对话错误:`, error);
         res.status(500).json({ success: false, message: '隐藏对话失败', error: error.message });
+    }
+});
+
+// 客服图片上传接口
+router.post('/upload/image', protect, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: '请选择要上传的图片' });
+        }
+
+        console.log('[客服图片上传] 收到文件:', req.file.originalname, '存储路径:', req.file.path);
+
+        // 在Render上，我们直接使用本地存储，不上传Cloudinary
+        // 构建相对URL路径，用于前端访问
+        const relativePath = req.file.path.replace(path.join(__dirname, '../public'), '');
+        const imageUrl = relativePath.replace(/\\/g, '/'); // 确保使用正斜杠
+
+        console.log('[客服图片上传] 本地存储成功:', imageUrl);
+
+        res.json({
+            success: true,
+            data: {
+                url: imageUrl
+            },
+            url: imageUrl // 保持向后兼容
+        });
+    } catch (error) {
+        console.error('[客服图片上传] 错误:', error);
+        // 如果本地文件存在，删除它
+        if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        res.status(500).json({ success: false, message: error.message || '图片上传失败' });
     }
 });
 
