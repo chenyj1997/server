@@ -92,25 +92,25 @@ mongoose.connect(config.mongoURI, {
 });
 
 // 新增：设置定时自动还款任务
-// 调度任务：每小时执行一次，处理未来8小时到2小时内的信息
+// 检查任务：每小时执行一次，检查是否有符合条件的信息需要安排自动还款
 cron.schedule('0 * * * *', async () => {
     try {
-        console.log(`[CRON_SCHEDULE] 开始执行自动还款调度任务 - ${new Date().toISOString()}`);
+        console.log(`[CRON_SCHEDULE] 开始执行自动还款检查任务 - ${new Date().toISOString()}`);
         await scheduleAutoRepayments();
-        console.log(`[CRON_SCHEDULE] 自动还款调度任务完成 - ${new Date().toISOString()}`);
+        console.log(`[CRON_SCHEDULE] 自动还款检查任务完成 - ${new Date().toISOString()}`);
     } catch (error) {
-        console.error(`[CRON_SCHEDULE] 自动还款调度任务失败:`, error);
+        console.error(`[CRON_SCHEDULE] 自动还款检查任务失败:`, error);
     }
 });
 
-// 执行任务：每5分钟执行一次，处理已到期的信息
-cron.schedule('*/5 * * * *', async () => {
+// 还款任务：每10分钟执行一次，从已安排的还款任务中取出一个执行
+cron.schedule('*/10 * * * *', async () => {
     try {
-        console.log(`[CRON_EXECUTE] 开始执行自动还款执行任务 - ${new Date().toISOString()}`);
+        console.log(`[CRON_EXECUTE] 开始执行自动还款任务 - ${new Date().toISOString()}`);
         await executeAutoRepayments();
-        console.log(`[CRON_EXECUTE] 自动还款执行任务完成 - ${new Date().toISOString()}`);
+        console.log(`[CRON_EXECUTE] 自动还款任务完成 - ${new Date().toISOString()}`);
     } catch (error) {
-        console.error(`[CRON_EXECUTE] 自动还款执行任务失败:`, error);
+        console.error(`[CRON_EXECUTE] 自动还款任务失败:`, error);
     }
 });
 
